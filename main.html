@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Tree Program</title>
+</head>
+<body>
+    <h1>Family Tree Program Demo</h1>
+    <div class="main">
+    
+        <div class="bar">
+            <button class="create">Create Map</button>
+            <button class="load">Load Map</button>
+        </div>
+
+        <canvas id="grid"></canvas>
+        <h3 class="coords">Current Position: </h3>
+        <h3 class="slot">Current Slot: </h3>
+
+    </div>
+
+    <script src="main.js"></script>
+</body>
+
+<style>
+
+    h1 {
+        color: grey;
+    }
+    
+    .main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bar {
+        padding: 25px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .bar > button {
+        margin: 0 50px 0 50px;
+        font-size: 18px;
+        border: none;
+        background-color: #555555;
+        color: white;
+        padding: 10px;
+        border-radius: 10px;
+        transition: 0.3s;
+    }
+
+    .bar > button:hover {
+        cursor: pointer;
+        background-color: #333333;
+        transition: 0.3s;
+    }
+
+    #grid {
+        height: 850px;
+        width: 850px;
+        border: 1px solid black;
+    }
+
+</style>
+
+</html>

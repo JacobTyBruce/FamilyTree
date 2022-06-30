@@ -15,8 +15,11 @@ let slot_height = 101;
 let slot_num = 9;
 let gutter = 30;
 
-canvas.width = slot_num * slot_width + gutter * slot_num + gutter;
-canvas.height = slot_num * slot_height + gutter * slot_num + gutter;
+// canvas.width = slot_num * slot_width + gutter * slot_num + gutter;
+// canvas.height = slot_num * slot_height + gutter * slot_num + gutter;
+
+canvas.width = (gutter + slot_width + gutter) * slot_num;
+canvas.height = (gutter + slot_height + gutter) * slot_num;
 
 // loop to create map points
 
@@ -47,6 +50,7 @@ for (let r = 0; r < slot_num; r++) {
 }
 
 // draw boxes around each grid slot
+// Loops through eahc slot object and draws based on TopLeft coord stored
 for (let slot in map) {
   ctx.beginPath();
   ctx.moveTo(map[slot].tl.x, map[slot].tl.y);
@@ -99,6 +103,9 @@ canvas.addEventListener(
 
     let ySector = Math.floor(y / (slot_width + gutter));
     console.log("Click in y sector: " + ySector);
+
+    let slot = (ySector*slot_num)+xSector;
+    console.log("Slot #: " + slot);
 
     console.log("-------------------------");
   },

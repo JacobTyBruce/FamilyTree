@@ -1,71 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <link rel="stylesheet" href="./main.css" />
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Family Tree Program</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Family Tree Program Demo</h1>
-    <div class="main">
-    
-        <div class="bar">
-            <button id="create">Create Map</button>
-            <button id="load">Load Map</button>
-        </div>
+    <div id="main">
+      <div class="bar">
+        <button id="create">Create Map</button>
+        <button id="load">Load Map</button>
+      </div>
 
-        <canvas id="grid"></canvas>
-        <h3 class="coords">Current Position: </h3>
-        <h3 class="slot">Current Slot: </h3>
+      <canvas id="grid"></canvas>
+      <h3 class="coords">Current Position:</h3>
+      <h3 class="slot">Current Slot:</h3>
+    </div>
 
+    <!-- Full Page Overview -->
+    <div class="full-overlay">
+      <div class="slot-entry">
+        <p class="add-exit">X</p>
+        <h1>Enter Member Data</h1>
+        <form action="" name="slot" id="slot-form">
+          <div class="form-item">
+            <label for="name">Full Name</label>
+            <br />
+            <input type="text" name="name" id="name-fill" required />
+            <br />
+          </div>
+
+          <div class="form-item">
+            <label for="pledgeClass">Pledge Class</label>
+            <br />
+            <input type="text" name="pledgeClass" id="pledgeClass" required />
+            <br />
+          </div>
+
+          <div class="form-item">
+            <label for="pic">Picture (Optional)</label>
+            <br />
+            <input type="file" accept="image/*" name="pic" id="pic" />
+            <br />
+          </div>
+
+          <div class="form-item">
+            <label for="big">Big</label>
+            <br />
+            <input type="text" name="big" id="big-entry" />
+            <div id="search"></div>
+          </div>
+
+          <div class="form-item">
+            <input type="submit" value="Submit" id="form-submit" />
+          </div>
+
+          <input type="hidden" name="slot" id="create-slot" />
+        </form>
+      </div>
+    </div>
+
+    <div class="full-overlay">
+      <div class="view-slot"></div>
     </div>
 
     <script src="main.js"></script>
-</body>
-
-<style>
-
-    h1 {
-        color: grey;
-    }
-    
-    .main {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .bar {
-        padding: 25px;
-        display: flex;
-        justify-content: center;
-    }
-
-    .bar > button {
-        margin: 0 50px 0 50px;
-        font-size: 18px;
-        border: none;
-        background-color: #555555;
-        color: white;
-        padding: 10px;
-        border-radius: 10px;
-        transition: 0.3s;
-    }
-
-    .bar > button:hover {
-        cursor: pointer;
-        background-color: #333333;
-        transition: 0.3s;
-    }
-
-    #grid {
-        height: 850px;
-        width: 850px;
-        border: 1px solid black;
-    }
-
-</style>
-
+  </body>
 </html>

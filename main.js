@@ -16,6 +16,9 @@ var full_map = [];
 // total members array
 var members = [];
 
+// download link/data str
+var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members));
+
 // counter for members to be added
 var updates_needed = 0;
 
@@ -270,6 +273,15 @@ function createPopup(x, y, slot) {
   document.body.appendChild(container);
 }
 
+// family tree helper functions --------------
+function findMemberByName(name) {
+  for (m in members) {
+    if (members[m].name == name) return members[m];
+  }
+  return -1;
+}
+
+
 // button functionailties
 
 // Slot Creating/Editing ----------------------
@@ -343,7 +355,7 @@ function create_slot_data(slot, existing) {
         ) {
           let search_item = document.createElement("p");
           search_item.classList.add("search-item");
-          search_item.innerText = members[mem];
+          search_item.innerText = members[mem].name;
 
           search_item.onclick = (e) => {
             big_textbox.value = e.target.innerText;
@@ -386,24 +398,30 @@ function create_slot_data(slot, existing) {
 
     // add littles to new member if any apply, just search members array
 
-    let littles = [];
     for (let m in members) {
       if (members[m].big == new_mem.name) {
         let new_little = members[m];
         // add in reverse numerical order by pledge class
-        if (littles.length == 0) {
-          littles.push(new_little);
-        } else {
-          for (l in littles) {
-            if (littles[l].pledgeClassNum < new_little.pledgeClassNum) {
-              let temp_littles = littles.slice(0, l);
-              temp_littles.push(new_little);
-              littles = temp_littles.conact(littles.slice(l + 1));
-            }
-          }
-        }
+        // oldest first
+          new_mem.littles.unshift(new_little);
       }
     }
+
+    // add to big's little array
+    let big = findMemberByName(new_mem.big);
+    if (big != -1) {
+      big.littles.unshift(new_mem);
+      // sort bigs littles array
+      big.littles.sort((a, b) => {
+        if (a.pledgeClassNum < b.pledgeClassNum) {
+          return -1;
+        } else {
+          return 1;
+        }
+        return 0;
+      })
+    }
+    
 
     // set pledgeClassNum
     let pledgeClassLetters = new_mem.pledgeClass.split(" ");
@@ -474,12 +492,12 @@ function create_slot_data(slot, existing) {
 // -----------------------------------------------
 
 // ---------- Creating and Loading Map -----------
+const scnd_elms = document.getElementsByClassName("scnd-bar");
 
 // Create Map Button
 
 const create_map_btn = document.getElementById("create");
 create_map_btn.onclick = () => {
-  let scnd_elms = document.getElementsByClassName("scnd-bar");
   if (scnd_elms.length > 0) {
     main.removeChild(scnd_elms[0]);
   }
@@ -490,10 +508,24 @@ create_map_btn.onclick = () => {
 
   main.insertBefore(scnd_bar, main.children[1]);
 
-  const create_btn = createButton("Create", "green", scnd_bar);
+  const create_btn = createButton("Add Member", "green", scnd_bar);
   create_btn.onclick = () => {
     create_slot_data(map.indexOf(slot), false);
   };
+
+  const download_map_btn = document.createElement('a');
+  download_map_btn.innerText = "Download Map";
+  scnd_bar.appendChild(download_map_btn);
+
+
+  // change to display button instead of anchor tag and have the button
+  // click make an anchor elm and trigger the download same way then remove anchor tag
+  download_map_btn.onclick = (e) => {
+    download_map_btn.setAttribute('href', dataStr);
+    download_map_btn.setAttribute('download', 'map.json');
+    //download_map_btn.click();
+    //e.preventDefault();
+}
 };
 
 // -----------------------------------------------
@@ -551,3 +583,123 @@ function findFamilyTree(member) {
 function gen_map() {
   // begin dfs
 }
+
+// Load Map Button
+const load_map_btn = document.getElementById('load');
+
+load_map_btn.onclick = () => {
+  if (scnd_elms.length > 0) {
+    // if elms are already slotted into bar below, clear
+    main.removeChild(scnd_elms[0]);
+  }
+  // add else chain to be able to clear bar for both create and load btn
+
+  const scnd_bar = document.createElement("div");
+  scnd_bar.classList.add("bar");
+  scnd_bar.classList.add("scnd-bar");
+
+  main.insertBefore(scnd_bar, main.children[1]);
+
+  const load_file_btn = createButton("Load from File", "orange", scnd_bar);
+  const load_from_str = createButton("Load from String", 'blue', scnd_bar);
+
+  load_file_btn.onclick = () => {
+    let input = document.createElement('input');
+    input.type = 'file';
+
+    input.onchange = e => {
+      let file = e.target.files[0];
+      console.log(file);
+
+      let reader = new FileReader();
+
+      reader.addEventListener('load', (r) => {
+        let text = r.target.result;
+
+        try {
+          let data = JSON.parse(text);
+          members = data;
+        } catch (error) {
+          console.log(error);
+          alert('Invalid File! Check console for error.');
+        }
+        
+      })
+
+      reader.readAsText(file);
+      
+    }
+
+    input.click();
+  };
+
+  load_from_str.onclick = (e) => {
+    // change this later
+    let res = window.prompt("Copy the object here", "JSON Object");
+    members = JSON.parse(res);
+  }
+};
+
+function gen_tree() {
+  // perhaps change this to use api to change programmatically 
+  // instead of packaging in one function
+
+  // create tree objects from members array
+  // NEEDED PROPS
+  // id, fid, name (fid = big id)
+
+  // assign id's to everyone
+  let c_id = 1;
+  for (m in members) {
+    members[m].tree_id = c_id;
+    c_id++;
+  }
+
+  // now create object for nodes
+  let tree_nodes = [];
+  for (m in members) {
+    let c_mem = members[m];
+    console.log("---------------------");
+    console.log(c_mem);
+    let node_obj = {};
+
+    node_obj.id = c_mem.tree_id;
+
+    let big = findMemberByName(c_mem.big);
+    if (big != -1) {node_obj.fid = big.tree_id; }
+    console.log(big);
+    
+    node_obj.Name = c_mem.name;
+
+    node_obj["Pledge Class"] = c_mem.pledgeClass;
+
+    console.log(node_obj);
+    console.log("---------------------");
+    console.log("\n\n")
+
+    tree_nodes.push(node_obj);
+  }
+
+  console.log(tree_nodes);
+
+  // Tree Generation --------------------
+  var tree = new FamilyTree(document.getElementById('tree'), {
+    nodeBinding: {
+      field_0: "Name",
+      field_1: "Pledge Class"
+    },
+    nodes: tree_nodes
+  });
+}
+
+// check if members ever changes and to update family tree
+// eqasier than changing each spot, again, making progrmatic change
+// will reduce comp power needed
+past_members = members;
+setInterval(() => {
+  if (past_members != members) {
+    past_members = members;
+    gen_tree();
+    console.log("Generating Tree");
+  }
+}, 500)

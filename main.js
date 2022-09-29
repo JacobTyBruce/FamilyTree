@@ -484,6 +484,9 @@ function create_slot_data(slot, existing) {
     console.log(new_mem);
     console.log(members);
     console.log(map);
+
+    // update members string so download link works
+    dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members));
   };
 }
 
@@ -669,6 +672,8 @@ function gen_tree() {
     if (big != -1) {node_obj.fid = big.tree_id; }
     console.log(big);
     
+    // assignment works as node_obj[ defined field name ]
+
     node_obj.Name = c_mem.name;
 
     node_obj["Pledge Class"] = c_mem.pledgeClass;

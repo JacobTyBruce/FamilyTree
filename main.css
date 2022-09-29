@@ -156,3 +156,16 @@
 .load-strong-box > .load{
 
 }
+
+/* Family Tree Customization */
+#tree>svg {
+  background-color: #772432;
+}
+
+#tree > svg > g.node > rect {
+  fill: #a79e70;
+}
+
+[data-l-id] path {
+  stroke: #ffcb4f;
+}

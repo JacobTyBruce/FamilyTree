@@ -398,6 +398,8 @@ function create_slot_data(slot, existing) {
 
     // add littles to new member if any apply, just search members array
 
+    // Littles are entered first, Big is being populated here
+
     for (let m in members) {
       if (members[m].big == new_mem.name) {
         let new_little = members[m];
@@ -408,18 +410,24 @@ function create_slot_data(slot, existing) {
     }
 
     // add to big's little array
+    // Big is entered first, little second, populating big's little array with this member
+
     let big = findMemberByName(new_mem.big);
+    console.log(new_mem.name + "'s big was " + ( (big != -1) ? " found!" : " not found!" ), big);
+    // perhaps redefine big prop as big obj later on, will have to rework a few systems to display obj.name instead of name prop
     if (big != -1) {
       big.littles.unshift(new_mem);
       // sort bigs littles array
       big.littles.sort((a, b) => {
         if (a.pledgeClassNum < b.pledgeClassNum) {
           return -1;
-        } else {
+        } else if (a.pledgeClassNum > b.pledgeClassNum) {
           return 1;
-        }
+        } else {
         return 0;
+        }
       })
+      console.log(big.name + "'s little array sorted: ", big.littles);
     }
     
 
@@ -487,6 +495,10 @@ function create_slot_data(slot, existing) {
 
     // update members string so download link works
     dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members));
+
+    // refresh tree view
+    gen_tree();
+    gen_pc();
   };
 }
 
@@ -707,4 +719,116 @@ setInterval(() => {
     gen_tree();
     console.log("Generating Tree");
   }
-}, 500)
+}, 100)
+
+// --------------- Second Gen - By Pledge Class ---------------------
+
+// find widths of family tree BELOW this member INCLUDING member passed in
+function findWidth(member) {
+
+  let little_w = 0;
+  let largest = 1;
+
+  let little_set = [];
+  member.littles.forEach(lil => {little_set.push(lil)})
+  
+  while (little_set.length > 0) {
+    little_w = little_set.length; // find width of current littles
+    let new_set = []; // temp set to assign to
+    little_set.forEach(lil => {
+      if (lil.littles.length > 0) {
+        lil.littles.forEach(lil_lil => { new_set.push(lil_lil); })
+      }
+    }); // fill with new littles
+    little_set = new_set; // set little set to temp set
+
+    // compare and see if largest
+    if (little_w > largest) { largest = little_w; }
+  }
+
+  return largest;
+
+}
+
+function makeTrees(mems, trees) {
+
+  // make family tree, and everytime member is discovered, remove from members array passed in
+
+
+  // go thru each mem in array, array will be removing items during iteration
+  while (mems.length > 0) {
+    start = mems[mems.length-1];
+    // start at last member in member array, and then gen tree off of him, then move to next member
+
+    tree = {
+      o: {},
+      w: findWidth(start),
+    }
+
+    // define array for first member
+    tree.o[start.pledgeClassNum] = [start];
+
+    // remove first member from array
+    mems = mems.filter(x => x != start)
+
+    let next_mems = [...start.littles];
+    console.log("Initial next_mems: ", next_mems);
+
+    // simply nav thru each member in tree -- GOTTA be because of shallow copy or something
+    while (next_mems.length > 0) {
+      let temp_mems = [];
+      next_mems.forEach(mem => {
+        // fuck shallow copies of objects
+        mem = findMemberByName(mem.name);
+        console.log(mem);
+
+        // check if array already exists, if so, push, if not create
+        ( Array.isArray(tree.o[mem.pledgeClassNum]) ) ? tree.o[mem.pledgeClassNum].push(mem) : tree.o[mem.pledgeClassNum] = [mem];
+        
+        // add littles to temp lil's if exist
+        console.log(mem.name + "'s littles: ", mem.littles);
+
+        // ERROR, not finding all littles
+
+        if (mem.littles.length > 0) { temp_mems = temp_mems.concat(mem.littles); }
+
+        // filter members out of mems array
+        mems = mems.filter(x => x.name != mem.name);
+      })
+
+      // copy temp to main
+      console.log("next_mems after generation: ", temp_mems);
+      next_mems = temp_mems;
+    }
+
+    trees.push(tree);
+
+  }
+
+}
+
+const node_width = 100;
+const node_height = 50;
+
+function gen_pc() {
+  let family_trees = [];
+  let copy_mems = [...members];
+  console.log("Original Members", members);
+  console.log("Copy of Members", copy_mems);
+
+  makeTrees(copy_mems, family_trees);
+
+  var stage = new Konva.Stage({
+    container: "tree-pc",
+    width: 500,
+    height: 500
+  });
+
+  var layer = new Konva.Layer();
+  stage.add(layer);
+
+
+  // for testing purposes
+  return family_trees;
+
+}

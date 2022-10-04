@@ -438,7 +438,7 @@ function create_slot_data(slot, existing) {
         alphabet.indexOf(pledgeClassLetters[0].toLocaleLowerCase()) + 1;
     } else {
       new_mem.pledgeClassNum =
-        alphabet.indexOf(pledgeClassLetters[0].toLowerCase()) * 23 +
+        (alphabet.indexOf(pledgeClassLetters[0].toLowerCase())+1) * 23 +
         (alphabet.indexOf(pledgeClassLetters[1].toLowerCase()) + 1);
     }
 
@@ -653,6 +653,7 @@ load_map_btn.onclick = () => {
     let res = window.prompt("Copy the object here", "JSON Object");
     members = JSON.parse(res);
   }
+
 };
 
 function gen_tree() {
@@ -717,6 +718,8 @@ setInterval(() => {
   if (past_members != members) {
     past_members = members;
     gen_tree();
+    gen_pc();
+    dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members));
     console.log("Generating Tree");
   }
 }, 100)
@@ -772,7 +775,6 @@ function makeTrees(mems, trees) {
     mems = mems.filter(x => x != start)
 
     let next_mems = [...start.littles];
-    console.log("Initial next_mems: ", next_mems);
 
     // simply nav thru each member in tree -- GOTTA be because of shallow copy or something
     while (next_mems.length > 0) {
@@ -780,13 +782,11 @@ function makeTrees(mems, trees) {
       next_mems.forEach(mem => {
         // fuck shallow copies of objects
         mem = findMemberByName(mem.name);
-        console.log(mem);
 
         // check if array already exists, if so, push, if not create
         ( Array.isArray(tree.o[mem.pledgeClassNum]) ) ? tree.o[mem.pledgeClassNum].push(mem) : tree.o[mem.pledgeClassNum] = [mem];
         
         // add littles to temp lil's if exist
-        console.log(mem.name + "'s littles: ", mem.littles);
 
         // ERROR, not finding all littles
 
@@ -797,7 +797,6 @@ function makeTrees(mems, trees) {
       })
 
       // copy temp to main
-      console.log("next_mems after generation: ", temp_mems);
       next_mems = temp_mems;
     }
 
@@ -810,25 +809,139 @@ function makeTrees(mems, trees) {
 const node_width = 100;
 const node_height = 50;
 
-function gen_pc() {
-  let family_trees = [];
-  let copy_mems = [...members];
-  console.log("Original Members", members);
-  console.log("Copy of Members", copy_mems);
+// gen canvas
+let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
 
-  makeTrees(copy_mems, family_trees);
+var stage = new Konva.Stage({
+  container: "tree-pc",
+  width: pcts.width.replace("px",""),
+  height: pcts.height.replace("px",""),
+  draggable: true,
+});
+
+var layer = new Konva.Layer();
+stage.add(layer);
+
+// responsive layout
+window.addEventListener('resize', () => {
+  let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
 
   var stage = new Konva.Stage({
     container: "tree-pc",
-    width: 500,
-    height: 500
+    width: pcts.width.replace("px",""),
+    height: pcts.height.replace("px",""),
+    draggable: true,
   });
 
-  var layer = new Konva.Layer();
-  stage.add(layer);
+})
 
+function tree_alloc(width, length, x, y) {
+  return {
+    x: x,
+    y: y,
+    width: width,
+    height: height,
+    fill: 'red',
+    stroke: 'black',
+    strokeWidth: 4
+  }
+}
+
+function gen_pc() {
+  let family_trees = [];
+  let copy_mems = [...members];
+
+  makeTrees(copy_mems, family_trees);
+
+  // make grid lines for each pledge class
+
+  console.log('Making Grid Lines')
+
+  let end = members[0].pledgeClassNum;
+  for (let i = 1; i <= end; i++) {
+    let color = (i%2 == 0) ? 'blue' : 'orange';
+    let pc_end_line = new Konva.Line({
+      points: [ 100, i*25, 900, i*25 ],
+      stroke: color,
+      strokeWidth: 4
+    });
+
+    // gotta be a better way to do this -- ERROR: need to handle case where i%24 == 0
+    let pledge_class_name = "";
+    if (i <= 24) {
+      pledge_class_name = alphabet[i-1];
+    }
+    else if (i%24 == 0) {
+      pledge_class_name = alphabet[Math.floor(i/24)-2];
+      pledge_class_name += " " + alphabet[23];
+    } else {
+      pledge_class_name = alphabet[Math.floor(i/24)-1];
+      pledge_class_name += " " + alphabet[i-(Math.floor(i/24)*24)-1];
+    }
+
+
+    let pc_name = new Konva.Text({
+      x: 0,
+      y: i*25,
+      text: i + ' ' + pledge_class_name,
+      fontSize: 12,
+      fontFamily: 'Calibri',
+      fill: 'black',
+    });
+
+    layer.add(pc_end_line);
+    layer.add(pc_name);
+  }
+
+  // reserve tree space / develop trees
+
+  console.log('Developing Trees')
+  // space where family trees can begin developing, start after line generation
+  const start_space = 110;
+
+  // array for next available space in row
+  let next_available_space = []
+  next_available_space.fill(start_space,0,members[0].pledgeClassNum-1);
+
+  // defined boxes for each family tree
+  family_trees.forEach(tree => {
+    let x;
+    let y;
+
+    // place at correct row according to top pledge class
+    let pcl = Object.getOwnPropertyNames(tree.o);
+    y = parseInt(pcl[0])*25+1;
+    let y_end = parseInt(pcl[pcl.length-1])*25;
+
+    // get x value by looping over next_available_space to find most compatible space
+    let next_available = start_space;
+    for (const pc in tree.o) {
+      if (next_available_space[parseInt(pc)-1] > next_available) {
+        next_available = next_available_space[parseInt(pc)-1];
+      }
+    }
+    x = next_available;
+
+    // update next_avaialbe_space array
+    for (const pc in tree.o) {
+      next_available_space[parseInt(pc)-1] = x+(tree.w*50)+50;
+    }
+
+    // Not sure what the fuck is going on, but somehow it knows when next big is and reserves space up until that class, but also doesnt claim all the way down, at least one tree doesn't (with luke)
+
+    // also probably need to update width, because riley's family tree is fat in spreadsheet but takes up less than cam's in program
+
+    let reserved_space = new Konva.Rect({
+      x: x,
+      y: y,
+      width: tree.w*50,
+      height: y_end-y,
+      fill: '#' + Math.floor(Math.random()*16777215).toString(16),
+    })
+
+    layer.add(reserved_space);
+  })
 
   // for testing purposes
-  return family_trees;
-
+  console.log("Family Trees: ", family_trees)
 }

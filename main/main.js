@@ -1,3 +1,25 @@
+// family tree class import
+import Tree from './tree.js';
+
+// ERROR REPORTS
+/*
+
+  For some god damn reason i you have to freshen the members pledge class number at damn near every step in generation, i have no god damn clue what is going on here, but it is fucking annoying as hell
+  It works for now, but is a very ruggid fix and would like to find out what is going on later
+
+*/
+
+// TODO:
+/*
+
+1. Make member class type and transform all functions that interact -- HUGE Overhaul
+2. Clean up file and get rid of useless code
+
+*/
+
+
+
+
 // main file for html display
 
 const main = document.getElementById("main");
@@ -19,35 +41,32 @@ var members = [];
 // download link/data str
 var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members));
 
-// counter for members to be added
-var updates_needed = 0;
-
 // greek alphabet for figuring out pledge class order
 const alphabet = [
-  "alpha",
-  "beta",
-  "gamma",
-  "delta",
-  "epsilon",
-  "zeta",
-  "eta",
-  "theta",
-  "iota",
-  "kappa",
-  "lambda",
-  "mu",
-  "nu",
-  "xi",
-  "omicron",
-  "pi",
-  "rho",
-  "sigma",
-  "tau",
-  "upsilon",
-  "phi",
-  "chi",
-  "psi",
-  "omega",
+  "alpha", // 1
+  "beta", // 2
+  "gamma", // 3
+  "delta", // 4
+  "epsilon", // 5
+  "zeta", // 6
+  "eta", // 7
+  "theta", // 8
+  "iota", // 9
+  "kappa", // 10
+  "lambda", // 11
+  "mu", // 12
+  "nu", // 13
+  "xi", // 14
+  "omicron", // 15
+  "pi", // 16
+  "rho", // 17
+  "sigma", // 18
+  "tau", // 19
+  "upsilon", // 20
+  "phi", // 21
+  "chi", // 22
+  "psi", // 23
+  "omega", // 24
 ];
 
 let slot_init = 0;
@@ -275,7 +294,7 @@ function createPopup(x, y, slot) {
 
 // family tree helper functions --------------
 function findMemberByName(name) {
-  for (m in members) {
+  for (let m in members) {
     if (members[m].name == name) return members[m];
   }
   return -1;
@@ -438,7 +457,7 @@ function create_slot_data(slot, existing) {
         alphabet.indexOf(pledgeClassLetters[0].toLocaleLowerCase()) + 1;
     } else {
       new_mem.pledgeClassNum =
-        (alphabet.indexOf(pledgeClassLetters[0].toLowerCase())+1) * 23 +
+        (alphabet.indexOf(pledgeClassLetters[0].toLowerCase())+1) * 24 +
         (alphabet.indexOf(pledgeClassLetters[1].toLowerCase()) + 1);
     }
 
@@ -595,10 +614,6 @@ function findFamilyTree(member) {
   tree.end = cg;
 }
 
-function gen_map() {
-  // begin dfs
-}
-
 // Load Map Button
 const load_map_btn = document.getElementById('load');
 
@@ -666,34 +681,27 @@ function gen_tree() {
 
   // assign id's to everyone
   let c_id = 1;
-  for (m in members) {
+  for (let m in members) {
     members[m].tree_id = c_id;
     c_id++;
   }
 
   // now create object for nodes
   let tree_nodes = [];
-  for (m in members) {
+  for (let m in members) {
     let c_mem = members[m];
-    console.log("---------------------");
-    console.log(c_mem);
     let node_obj = {};
 
     node_obj.id = c_mem.tree_id;
 
     let big = findMemberByName(c_mem.big);
     if (big != -1) {node_obj.fid = big.tree_id; }
-    console.log(big);
     
     // assignment works as node_obj[ defined field name ]
 
     node_obj.Name = c_mem.name;
 
     node_obj["Pledge Class"] = c_mem.pledgeClass;
-
-    console.log(node_obj);
-    console.log("---------------------");
-    console.log("\n\n")
 
     tree_nodes.push(node_obj);
   }
@@ -713,101 +721,136 @@ function gen_tree() {
 // check if members ever changes and to update family tree
 // eqasier than changing each spot, again, making progrmatic change
 // will reduce comp power needed
-past_members = members;
+let past_members = members;
 setInterval(() => {
   if (past_members != members) {
+    correctPC(members); // all are right here
     past_members = members;
-    gen_tree();
+    gen_tree(); // all are right here
     gen_pc();
     dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members));
-    console.log("Generating Tree");
   }
 }, 100)
 
 // --------------- Second Gen - By Pledge Class ---------------------
 
 // find widths of family tree BELOW this member INCLUDING member passed in
+
+// also assign width BELOW member INCLUDING THEM to member
+
+// make recursive
+// if no littles, assign 1 and return 1
+// otherwise, add 1+ sum of widths of littles and assign then return
+
+// make seperate function to find largest width in family tree, should be easy once assigned to member
 function findWidth(member) {
-
-  let little_w = 0;
-  let largest = 1;
-
-  let little_set = [];
-  member.littles.forEach(lil => {little_set.push(lil)})
-  
-  while (little_set.length > 0) {
-    little_w = little_set.length; // find width of current littles
-    let new_set = []; // temp set to assign to
-    little_set.forEach(lil => {
-      if (lil.littles.length > 0) {
-        lil.littles.forEach(lil_lil => { new_set.push(lil_lil); })
-      }
-    }); // fill with new littles
-    little_set = new_set; // set little set to temp set
-
-    // compare and see if largest
-    if (little_w > largest) { largest = little_w; }
+  if (member.littles.length == 0) {
+    member.width = 1;
+    return 1;
   }
 
-  return largest;
+  let sum = 0;
+  for (let little in member.littles) {
+    sum += findWidth(member.littles[little]);
+  }
+
+  member.width = sum;
+  return sum;
 
 }
 
-function makeTrees(mems, trees) {
+// get largest width in family tree using the members width property
+
+// bout useless as fuck
+function findTreeWidth(root) {
+  let max = 0;
+  let cg = [];
+  let ng = [];
+  cg.push(root);
+  while (cg.length > 0) {
+    for (let mem in cg) {
+      if (cg[mem].width > max) {
+        max = cg[mem].width;
+      }
+
+      for (let little in cg[mem].littles) {
+        ng.push(cg[mem].littles[little]);
+      }
+    }
+
+    cg = ng;
+    ng = [];
+  }
+
+  return max;
+}
+
+function makeTrees(mems) {
+  // error tracker 
+  // input is fine
+  // error statrs after root member
+
+  let trees = [];
+
+  console.log(JSON.stringify(mems[mems.length-2])) // IS FINE HERE
+  console.log(JSON.stringify(mems[mems.length-1])) // WRONG HERE, BUT WHY
 
   // make family tree, and everytime member is discovered, remove from members array passed in
 
-
   // go thru each mem in array, array will be removing items during iteration
   while (mems.length > 0) {
-    start = mems[mems.length-1];
+    let start = mems[mems.length-1];
+    findWidth(start);
+
+    console.log(start.littles) // wrong here
     // start at last member in member array, and then gen tree off of him, then move to next member
 
-    tree = {
-      o: {},
-      w: findWidth(start),
-    }
-
-    // define array for first member
-    tree.o[start.pledgeClassNum] = [start];
+    let new_tree = new Tree({root: start});
+    let youngest = start.pledgeClassNum;
 
     // remove first member from array
-    mems = mems.filter(x => x != start)
+    mems = mems.filter(x => x.name != start.name)
 
-    let next_mems = [...start.littles];
+    let next_mems = start.littles;
 
     // simply nav thru each member in tree -- GOTTA be because of shallow copy or something
     while (next_mems.length > 0) {
       let temp_mems = [];
       next_mems.forEach(mem => {
+        // try and freshen value with correctPC
+        correctPC(mem);
+
         // fuck shallow copies of objects
         mem = findMemberByName(mem.name);
 
-        // check if array already exists, if so, push, if not create
-        ( Array.isArray(tree.o[mem.pledgeClassNum]) ) ? tree.o[mem.pledgeClassNum].push(mem) : tree.o[mem.pledgeClassNum] = [mem];
+        // check if pledgeClassNum is less than current youngest
+        if (mem.pledgeClassNum > youngest) {
+          // if so, set as new youngest
+          youngest = mem.pledgeClassNum;
+        }
         
         // add littles to temp lil's if exist
-
-        // ERROR, not finding all littles
+        // ERROR, not finding all littles -- got fixed???
 
         if (mem.littles.length > 0) { temp_mems = temp_mems.concat(mem.littles); }
 
-        // filter members out of mems array
+        // filter members out of mems array and also assign width at time -- MAYBE find better time to assign width, this just so happens to iterate over each member
+        findWidth(mem);
         mems = mems.filter(x => x.name != mem.name);
       })
 
       // copy temp to main
       next_mems = temp_mems;
     }
-
-    trees.push(tree);
+    new_tree.end = youngest;
+    trees.push(new_tree);
 
   }
-
+  return trees;
 }
 
-const node_width = 100;
-const node_height = 50;
+const node_width = 55;
+const node_height = 25;
 
 // gen canvas
 let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
@@ -826,15 +869,18 @@ stage.add(layer);
 window.addEventListener('resize', () => {
   let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
 
-  var stage = new Konva.Stage({
+  stage = new Konva.Stage({
     container: "tree-pc",
     width: pcts.width.replace("px",""),
     height: pcts.height.replace("px",""),
     draggable: true,
   });
 
+  stage.add(layer)
+
 })
 
+// doesnt get used, could use ig?
 function tree_alloc(width, length, x, y) {
   return {
     x: x,
@@ -848,10 +894,19 @@ function tree_alloc(width, length, x, y) {
 }
 
 function gen_pc() {
-  let family_trees = [];
-  let copy_mems = [...members];
 
-  makeTrees(copy_mems, family_trees);
+
+  // error starts here!
+
+
+  layer.destroyChildren();
+
+
+  // use JSON hack, update to structuredClone once more research and adaptation is done/support to detect if iOS or not
+  let copy_mems = JSON.parse(JSON.stringify(members));
+
+  let family_trees =makeTrees(copy_mems);
+  console.log("Family Trees Generated from makeTrees", family_trees); // starts here too
 
   // make grid lines for each pledge class
 
@@ -861,12 +916,13 @@ function gen_pc() {
   for (let i = 1; i <= end; i++) {
     let color = (i%2 == 0) ? 'blue' : 'orange';
     let pc_end_line = new Konva.Line({
-      points: [ 100, i*25, 900, i*25 ],
+      points: [ 100, i*25, 2000, i*25 ],
       stroke: color,
       strokeWidth: 4
     });
 
     // gotta be a better way to do this -- ERROR: need to handle case where i%24 == 0
+    // fixed???
     let pledge_class_name = "";
     if (i <= 24) {
       pledge_class_name = alphabet[i-1];
@@ -905,43 +961,148 @@ function gen_pc() {
 
   // defined boxes for each family tree
   family_trees.forEach(tree => {
-    let x;
-    let y;
-
-    // place at correct row according to top pledge class
-    let pcl = Object.getOwnPropertyNames(tree.o);
-    y = parseInt(pcl[0])*25+1;
-    let y_end = parseInt(pcl[pcl.length-1])*25;
+    console.log(tree);
 
     // get x value by looping over next_available_space to find most compatible space
-    let next_available = start_space;
-    for (const pc in tree.o) {
-      if (next_available_space[parseInt(pc)-1] > next_available) {
-        next_available = next_available_space[parseInt(pc)-1];
+    // compatible space = the largest value in next_available_space that corresponds to pc numbers
+    let x = start_space;
+
+    for (let i = tree.root.pledgeClassNum; i < end+1; i++) {
+      if (next_available_space[i-1] > x) {
+        x = next_available_space[i-1];
       }
     }
-    x = next_available;
 
     // update next_avaialbe_space array
-    for (const pc in tree.o) {
-      next_available_space[parseInt(pc)-1] = x+(tree.w*50)+50;
+    // loops over next_available_space in regards to the pledsge class numbers and updates the next available space to the width of the tree added
+    for (let i = tree.root.pledgeClassNum; i < end+1; i++) {
+      next_available_space[i-1] = x+(tree.width*50)+50;
     }
 
     // Not sure what the fuck is going on, but somehow it knows when next big is and reserves space up until that class, but also doesnt claim all the way down, at least one tree doesn't (with luke)
 
     // also probably need to update width, because riley's family tree is fat in spreadsheet but takes up less than cam's in program
+    // ^^^^ figure out better 'real width' claculation, one right now is fat as fuck ^^^
 
-    let reserved_space = new Konva.Rect({
+    // w = 2| 51 | 2
+    // 51 so odd can be centered
+
+    console.log("Tree reserved space: x: " + x + "->" + x+tree.width*55 + " y: " + tree.root.pledgeClassNum*25 + "->" + tree.end*25);
+
+    let res_bloc = {
       x: x,
-      y: y,
-      width: tree.w*50,
-      height: y_end-y,
+      y: tree.root.pledgeClassNum*25,
+      width: tree.width*55,
+      height: (tree.end+1)*25-tree.root.pledgeClassNum*25,
       fill: '#' + Math.floor(Math.random()*16777215).toString(16),
-    })
+    }
+
+    let reserved_space = new Konva.Rect(res_bloc)
 
     layer.add(reserved_space);
+
+    // add members to resrved place
+    // go to first member in tree and generate from there
+    drawGen(x, [tree.root])
+
   })
 
   // for testing purposes
+  // pledgeClasses are wrong here - ERROR 
   console.log("Family Trees: ", family_trees)
+  return family_trees;
+}
+
+// helper if pledge classes ever change or something wierd happens with them, used during initial testing
+function correctPC(set) {
+  if (set.pledgeClassNum || set.name) {
+    let pcl = set.pledgeClass.split(" ");
+    let correctPc = (alphabet.indexOf(pcl[0].toLowerCase())+1) * 24 +
+                    (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
+
+    if (set.pledgeClassNum != correctPc) {
+      console.log("Corrected " + set.name + "'s pledge class number from " + set.pledgeClassNum + " to " + correctPc);
+      set.pledgeClassNum = correctPc;
+    }
+  } else {
+    for (let mem of set) {
+      let pcl = mem.pledgeClass.split(" ");
+      let correctPc = (alphabet.indexOf(pcl[0].toLowerCase())+1) * 24 +
+                      (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
+
+      if (mem.pledgeClassNum != correctPc) {
+        console.log("Corrected " + mem.name + "'s pledge class number from " + mem.pledgeClassNum + " to " + correctPc);
+        mem.pledgeClassNum = correctPc;
+      } else {
+        //console.log(mem.name +"'s pledge class number was correct: " + mem.pledgeClass + ": " + mem.pledgeClassNum);
+      }
+    }
+  }
+}
+
+function drawGen(avail_space, generation) {
+  // fix pledgec class numbers
+  correctPC(generation);
+
+
+  // avail_space is where the available space starts
+  // generation is an array of members in the generation
+
+  // if generation is larger than 1 person, go from first member to left and get the width property on member and use it to reserve portion of avail_space
+  // then use the space used in avail_space as next avail_space and the littles as generation
+  if (generation.length == 1) {
+    let person = new Konva.Rect({
+      x: (avail_space+((generation[0].width*55)/2))-(node_width/2),
+      y: generation[0].pledgeClassNum*25,
+      width: node_width,
+      height: node_height,
+      fill: 'blue',
+    });
+
+    let name = new Konva.Text({
+      x: (avail_space+((generation[0].width*55)/2))-(node_width/2)+3,
+      y: generation[0].pledgeClassNum*25+4,
+      text: generation[0].name.split(" ")[0],
+      fontSize: 12,
+      fontFamily: 'Calibri',
+      fill: 'green',
+    });
+    layer.add(person);
+    layer.add(name);
+
+    // if mem has littles, run again, otherwise be done
+    if (generation[0].littles.length > 0) {
+      drawGen(avail_space, generation[0].littles);
+    } else {
+      return;
+    }
+
+  } else {
+    let next_available_space = avail_space;
+    for (let mem of generation) {
+      let person = new Konva.Rect({
+        x: next_available_space+((mem.width*55)/2)-(node_width/2),
+        y: mem.pledgeClassNum*25,
+        width: node_width,
+        height: node_height,
+        fill: 'orange',
+      })
+
+      let name = new Konva.Text({
+        x: next_available_space+((mem.width*55)/2)-(node_width/2)+1,
+        y: mem.pledgeClassNum*25+4,
+        text: mem.name.split(" ")[0],
+        fontSize: 12,
+        fontFamily: 'Calibri',
+        fill: 'green',
+      });
+
+      layer.add(person);
+      layer.add(name);
+
+      // go to next generation using next available space and current mem.length and then this members littles
+      drawGen(next_available_space, mem.littles);
+      next_available_space += mem.width*55;
+    }
+  }
 }

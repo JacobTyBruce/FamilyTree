@@ -9,6 +9,10 @@
   </head>
   <body>
     <h1>Family Tree Program Demo</h1>
+    <select name="view" id="view">
+      <option value="gen">Generation View</option>
+      <option value="list">Pledge Class View</option>
+    </select>
     <div id="main">
       <div class="bar">
         <button id="create">Create Map</button>
@@ -25,7 +29,7 @@
       <div style="height: 20px;"></div>
 
       <!-- Second Gen Canvas, by pledge class -->
-      <div id="tree-pc" style="width: 80%; height: 700px; border: 1px solid black;"></div>
+      <div id="tree-pc"></div>
 
     </div>
 

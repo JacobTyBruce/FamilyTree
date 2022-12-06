@@ -160,10 +160,6 @@ body {
   width: 40vw;
 }
 
-.load-strong-box > .load{
-
-}
-
 /* Family Tree Customization */
 #tree>svg {
   background-color: #772432;
@@ -175,4 +171,11 @@ body {
 
 [data-l-id] path {
   stroke: #ffcb4f;
+}
+
+#tree-pc {
+  width: 90vw;
+  height: 90vh;
+  display: none;
+  border: 1px solid black;
 }

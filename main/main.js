@@ -24,16 +24,46 @@ import Tree from './tree.js';
 
 const main = document.getElementById("main");
 
-// Grid Setup
+// Pledge Class Dimensions
+const pledge_class_row_height = 100;
+
+const pledge_class_node_w = 150;
+const pledge_class_node_h = 80;
+
+
+// Generation View Setup
 
 var canvas = document.getElementById("grid");
 var ctx = canvas.getContext("2d");
 ctx.fillStyle = "red";
 
-var map = [];
+// Pledge Class View Setup
+let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
 
-// full map that is generated after generation, it is fuller size than dislpay map abd contains all info, resieable and malleable
-var full_map = [];
+var stage = new Konva.Stage({
+  container: "tree-pc",
+  width: pcts.width.replace("px",""),
+  height: pcts.height.replace("px",""),
+  draggable: true,
+});
+
+var layer = new Konva.Layer();
+stage.add(layer);
+
+// select view code
+const select_view = document.getElementById("view");
+select_view.onchange = (v) => {
+  if (v.target.value == "gen") {
+    document.getElementById("tree").style.display = "block";
+    document.getElementById("tree-pc").style.display = "none";
+  } else {
+    document.getElementById("tree").style.display = "none";
+    document.getElementById("tree-pc").style.display = "block";
+  }
+}
+
+// useless im mpretty sure -- legacy grid
+var map = [];
 
 // total members array
 var members = [];
@@ -852,19 +882,6 @@ function makeTrees(mems) {
 const node_width = 55;
 const node_height = 25;
 
-// gen canvas
-let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
-
-var stage = new Konva.Stage({
-  container: "tree-pc",
-  width: pcts.width.replace("px",""),
-  height: pcts.height.replace("px",""),
-  draggable: true,
-});
-
-var layer = new Konva.Layer();
-stage.add(layer);
-
 // responsive layout
 window.addEventListener('resize', () => {
   let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
@@ -895,10 +912,6 @@ function tree_alloc(width, length, x, y) {
 
 function gen_pc() {
 
-
-  // error starts here!
-
-
   layer.destroyChildren();
 
 
@@ -916,13 +929,11 @@ function gen_pc() {
   for (let i = 1; i <= end; i++) {
     let color = (i%2 == 0) ? 'blue' : 'orange';
     let pc_end_line = new Konva.Line({
-      points: [ 100, i*25, 2000, i*25 ],
+      points: [ 100, i*pledge_class_row_height, 2000, i*pledge_class_row_height ],
       stroke: color,
       strokeWidth: 4
     });
 
-    // gotta be a better way to do this -- ERROR: need to handle case where i%24 == 0
-    // fixed???
     let pledge_class_name = "";
     if (i <= 24) {
       pledge_class_name = alphabet[i-1];
@@ -938,7 +949,7 @@ function gen_pc() {
 
     let pc_name = new Konva.Text({
       x: 0,
-      y: i*25,
+      y: i*pledge_class_row_height - 10,
       text: i + ' ' + pledge_class_name,
       fontSize: 12,
       fontFamily: 'Calibri',
@@ -976,7 +987,7 @@ function gen_pc() {
     // update next_avaialbe_space array
     // loops over next_available_space in regards to the pledsge class numbers and updates the next available space to the width of the tree added
     for (let i = tree.root.pledgeClassNum; i < end+1; i++) {
-      next_available_space[i-1] = x+(tree.width*50)+50;
+      next_available_space[i-1] = x+(tree.width*pledge_class_node_w)+50;
     }
 
     // Not sure what the fuck is going on, but somehow it knows when next big is and reserves space up until that class, but also doesnt claim all the way down, at least one tree doesn't (with luke)
@@ -991,10 +1002,10 @@ function gen_pc() {
 
     let res_bloc = {
       x: x,
-      y: tree.root.pledgeClassNum*25,
-      width: tree.width*55,
-      height: (tree.end+1)*25-tree.root.pledgeClassNum*25,
-      fill: '#' + Math.floor(Math.random()*16777215).toString(16),
+      y: tree.root.pledgeClassNum*pledge_class_row_height,
+      width: tree.width*pledge_class_node_w,
+      height: (tree.end+1)*pledge_class_row_height-tree.root.pledgeClassNum*pledge_class_row_height,
+      stroke: '#' + Math.floor(Math.random()*16777215).toString(16),
     }
 
     let reserved_space = new Konva.Rect(res_bloc)
@@ -1040,57 +1051,78 @@ function correctPC(set) {
   }
 }
 
-function drawGen(avail_space, generation) {
+function drawGen(avail_space, generation, last_line) {
   // fix pledgec class numbers
   correctPC(generation);
 
 
   // avail_space is where the available space starts
   // generation is an array of members in the generation
+  // last_line is the line draw from center down 10 pixels, used to draw children towards
+  //      if there is one child, draw straight up, otherwise make L connection
+  //      is passed as [x,y]
 
   // if generation is larger than 1 person, go from first member to left and get the width property on member and use it to reserve portion of avail_space
   // then use the space used in avail_space as next avail_space and the littles as generation
   if (generation.length == 1) {
     let person = new Konva.Rect({
-      x: (avail_space+((generation[0].width*55)/2))-(node_width/2),
-      y: generation[0].pledgeClassNum*25,
-      width: node_width,
-      height: node_height,
+      x: (avail_space+((generation[0].width*pledge_class_node_w)/2))-(pledge_class_node_w/2),
+      y: generation[0].pledgeClassNum*pledge_class_row_height,
+      width: pledge_class_node_w,
+      height: pledge_class_node_h,
       fill: 'blue',
     });
 
     let name = new Konva.Text({
-      x: (avail_space+((generation[0].width*55)/2))-(node_width/2)+3,
-      y: generation[0].pledgeClassNum*25+4,
+      x: (avail_space+((generation[0].width*pledge_class_node_w)/2))-(pledge_class_node_w/2)+3,
+      y: generation[0].pledgeClassNum*pledge_class_row_height+4,
       text: generation[0].name.split(" ")[0],
       fontSize: 12,
       fontFamily: 'Calibri',
       fill: 'green',
     });
+
+    if (last_line != undefined) {
+      // draw line up to previous line
+      let line = new Konva.Line({
+        points: [avail_space+((generation[0].width*pledge_class_node_w)/2), generation[0].pledgeClassNum*pledge_class_row_height , avail_space+((generation[0].width*pledge_class_node_w)/2), last_line[1]],
+        stroke: 'black',
+        strokeWidth: 1,
+      })
+      layer.add(line);
+    }
+    
+
     layer.add(person);
     layer.add(name);
 
-    // if mem has littles, run again, otherwise be done
+    // run again if there are littles
     if (generation[0].littles.length > 0) {
-      drawGen(avail_space, generation[0].littles);
-    } else {
-      return;
+      // draw line 10 pixels below node, centered
+      let line = new Konva.Line({
+        points: [avail_space+((generation[0].width*pledge_class_node_w)/2), generation[0].pledgeClassNum*pledge_class_row_height+pledge_class_node_h, avail_space+((generation[0].width*pledge_class_node_w)/2), generation[0].pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10],
+        stroke: 'black',
+        strokeWidth: 1,
+      })
+      layer.add(line);
+      drawGen(avail_space, generation[0].littles, [avail_space+((generation[0].width*pledge_class_node_w)/2),generation[0].pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10]);
     }
 
   } else {
     let next_available_space = avail_space;
     for (let mem of generation) {
+
       let person = new Konva.Rect({
-        x: next_available_space+((mem.width*55)/2)-(node_width/2),
-        y: mem.pledgeClassNum*25,
-        width: node_width,
-        height: node_height,
+        x: next_available_space+((mem.width*pledge_class_node_w)/2)-(pledge_class_node_w/2),
+        y: mem.pledgeClassNum*pledge_class_row_height,
+        width: pledge_class_node_w,
+        height: pledge_class_node_h,
         fill: 'orange',
       })
 
       let name = new Konva.Text({
-        x: next_available_space+((mem.width*55)/2)-(node_width/2)+1,
-        y: mem.pledgeClassNum*25+4,
+        x: next_available_space+((mem.width*pledge_class_node_w)/2)-(pledge_class_node_w/2)+1,
+        y: mem.pledgeClassNum*pledge_class_row_height+4,
         text: mem.name.split(" ")[0],
         fontSize: 12,
         fontFamily: 'Calibri',
@@ -1100,9 +1132,37 @@ function drawGen(avail_space, generation) {
       layer.add(person);
       layer.add(name);
 
+      if (last_line != undefined) {
+        // draw line using L connectopn, using two lines, one up, and one to the side
+        let up_line = new Konva.Line({
+          points: [next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height, next_available_space+((mem.width*pledge_class_node_w)/2), last_line[1]],
+          stroke: 'black',
+          strokeWidth: 1,
+        })
+
+        let side_line = new Konva.Line({
+          points: [next_available_space+((mem.width*pledge_class_node_w)/2), last_line[1], last_line[0], last_line[1]],
+          stroke: 'black',
+          strokeWidth: 1,
+        })
+
+        layer.add(up_line);
+        layer.add(side_line);
+      }
+
+      // add line below and run again if there are littles
+      if (mem.littles.length > 0) {
+        // draw a line below the node 10 points below, centered in middle of node
+        let line = new Konva.Line({
+          points: [next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height+pledge_class_node_h, next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10],
+          stroke: 'black',
+          strokeWidth: 1,
+        })
+        layer.add(line);
+        drawGen(next_available_space, mem.littles, [next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10]);
+      }
       // go to next generation using next available space and current mem.length and then this members littles
-      drawGen(next_available_space, mem.littles);
-      next_available_space += mem.width*55;
+      next_available_space += mem.width*pledge_class_node_w;
     }
   }
 }

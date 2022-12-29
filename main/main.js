@@ -31,6 +31,12 @@ const pledge_class_node_w = 150;
 const pledge_class_node_h = 80;
 
 
+// Generation View Setup
+
+var canvas = document.getElementById("grid");
+var ctx = canvas.getContext("2d");
+ctx.fillStyle = "red";
+
 // Pledge Class View Setup
 let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
 
@@ -93,6 +99,229 @@ const alphabet = [
   "omega", // 24
 ];
 
+let slot_init = 0;
+
+// Make sure these match up with canvas dimensions, they are shared across HTML, JS, and CSS in that order
+// just make sure the computations can fit
+// EVENTUALLY make it be based off of rendered size and width
+// Padding = 1 Slot = 3 | 1-3-1 spacing
+let slot_width = 61;
+let slot_height = 61;
+let slot_num = 9;
+let gutter = 20;
+
+canvas.width = (gutter + slot_width + gutter) * slot_num;
+console.log("Changed width: " + canvas.width);
+canvas.height = (gutter + slot_height + gutter) * slot_num;
+console.log("Changed height: " + canvas.height);
+
+// loop to create map points
+
+// loop thru rows
+for (let r = 0; r < slot_num; r++) {
+  // then by slots in the ind. row to allow for left-to-right dir in grid
+  for (let s = 0; s < slot_num; s++) {
+    // init top left corner
+    map[slot_init] = {
+      tl: {
+        /*
+        x: s * slot_width + 1 + gutter * s + gutter,
+        y: r * slot_height + 1 + gutter * r + gutter,
+        */
+
+        x: gutter + 1 + (gutter + slot_width + gutter) * s,
+        y: gutter + 1 + (gutter + slot_height + gutter) * r,
+      },
+      content: null,
+    };
+
+    /*
+        // remove gutter margin if applicable
+        if (r == 0) {
+            map[slot_init].tl.y -= gutter;
+        }
+        if (s == 0) {
+            map[slot_init].tl.x -= gutter;
+        }
+        */
+    slot_init++;
+  }
+}
+
+// draw boxes around each grid slot
+// Loops through eahc slot object and draws based on TopLeft coord stored
+for (let slot in map) {
+  ctx.beginPath();
+  ctx.moveTo(map[slot].tl.x, map[slot].tl.y);
+  //ctx.lineTo(map[slot].tl.x+slot_width/2, map[slot].tl.y+slot_height/2);
+  ctx.rect(map[slot].tl.x, map[slot].tl.y, slot_width, slot_height);
+  ctx.stroke();
+}
+
+console.log("Map Slots: ", map);
+
+// Slot Content Checker Interval
+setInterval(() => {
+  for (let s in map) {
+    if (map[s].content != null) {
+      ctx.beginPath();
+      ctx.arc(
+        map[s].tl.x + slot_width / 2 + 0.5,
+        map[s].tl.y + slot_height / 2 + 0.5,
+        slot_width / 2 - 10,
+        0,
+        2 * Math.PI
+      );
+      ctx.stroke();
+    }
+  }
+}, 100);
+
+// Canvas click event to check if slot clicked
+canvas.addEventListener(
+  "click",
+  (e) => {
+    console.log("-------Click Event-------");
+
+    //const rect = canvas.getBoundingClientRect();
+    //const x = e.clientX - rect.left;
+    //const y = e.clientY - rect.top;
+    const x = e.offsetX;
+    const y = e.offsetY;
+    console.log("x: " + x + " y: " + y);
+
+    // figure out what box click was in, if any
+
+    // first, divide click event position by padding+box length. This divides the grid into sectors.
+    // Using INTEGER division, you can find what box/sector the click was in by dividing the click event position by the padding+box length.
+    // Then, to find if the click event was in the padding or box region ofd the sector, use the MOD (%) of the posotion and box length + padding. This will return the reaminder i.e. how far in the sector it is, telling you if in paddong or in box
+
+    // Index : Position / Box Length+Padding
+    // Box or Padding : Position % Box Length+Padding
+
+    let xSector = Math.floor(x / (gutter + slot_width + gutter));
+    console.log(
+      "Click in x sector: " +
+        x +
+        " / " +
+        (gutter + slot_width + gutter) +
+        " = " +
+        xSector
+    );
+
+    let ySector = Math.floor(y / (gutter + slot_height + gutter));
+    console.log(
+      "Click in y sector: " +
+        y +
+        " / " +
+        (gutter + slot_width + gutter) +
+        " = " +
+        ySector
+    );
+
+    let slot = ySector * slot_num + xSector;
+    console.log("Slot #: " + slot);
+
+    // find if clicked in slot or padding
+    let sectorX = x % (gutter + slot_width + gutter);
+    let sectorY = y % (gutter + slot_width + gutter);
+    let clickedSlot =
+      sectorX > gutter &&
+      sectorX <= gutter + slot_width &&
+      sectorY > gutter &&
+      sectorY <= gutter + slot_height
+        ? true
+        : false;
+
+    console.log(clickedSlot ? "Clicked in Slot" : "Clicked in margin");
+
+    // display popup
+    if (clickedSlot) {
+      createPopup(e.pageX, e.pageY, map[slot]);
+    } else {
+      const previousPopup = document.getElementsByClassName("popup");
+      if (previousPopup.length > 0) {
+        previousPopup[0].remove();
+      }
+    }
+
+    console.log("-------------------------");
+  },
+  false
+);
+
+// create btn function to reduce redundency
+function createButton(text, color, parent) {
+  const newBtn = document.createElement("button");
+  newBtn.innerText = text;
+  newBtn.style.background = color;
+  parent.appendChild(newBtn);
+
+  return newBtn;
+}
+
+// Create popup function
+function createPopup(x, y, slot) {
+  // PARAMS: x pos of click, y pos of click: both rel to page
+  // slot: slot obj of the one clicked on
+
+  // possibly put popup after slot, just use slot obj pos info to position
+
+  // remove any container already on page
+  const previousPopup = document.getElementsByClassName("popup");
+  if (previousPopup.length > 0) {
+    previousPopup[0].remove();
+  }
+
+  // create container div
+  const container = document.createElement("div");
+  container.classList.add("popup");
+  container.style.left = x + "px";
+  container.style.top = y + "px";
+
+  // create button list
+  const btn_ctnr = document.createElement("div");
+  btn_ctnr.classList.add("btn-area");
+  container.appendChild(btn_ctnr);
+
+  const txt_ctnr = document.createElement("p");
+  txt_ctnr.classList.add("txt-area");
+  container.appendChild(txt_ctnr);
+
+  // add exit btn
+  const exit_btn = document.createElement("button");
+  exit_btn.innerText = "X";
+  exit_btn.classList.add("exit");
+  btn_ctnr.appendChild(exit_btn);
+
+  // add exit func
+  exit_btn.onclick = () => {
+    const popup = document.getElementsByClassName("popup");
+    popup[0].remove();
+  };
+
+  // Create Map Button Function
+  if (slot.content == null) {
+    // if no content set
+    txt_ctnr.innerText = "No info has been set for this slot.";
+  } else {
+    // if there is content set
+    const view_btn = createButton("View", "blue", btn_ctnr);
+    const edit_btn = createButton("Edit", "orange", btn_ctnr);
+    const delete_btn = createButton("Delete", "maroon", btn_ctnr);
+
+    view_btn.onclick = () => {
+      alert(slot.content);
+    };
+
+    edit_btn.onclick = () => {
+      create_slot_data(map.indexOf(slot), true);
+    };
+  }
+
+  document.body.appendChild(container);
+}
+
 // family tree helper functions --------------
 function findMemberByName(name) {
   for (let m in members) {
@@ -101,7 +330,15 @@ function findMemberByName(name) {
   return -1;
 }
 
-function add_member(existing_mem) {
+
+// button functionailties
+
+// Slot Creating/Editing ----------------------
+
+function create_slot_data(slot, existing) {
+  // TODO - Edit this as it is not needed
+  //document.getElementById("create-slot").value = slot;
+  //slot = map[slot];
 
   // create slot data input menu
   document.body.classList.add("disable-scrolling");
@@ -127,18 +364,17 @@ function add_member(existing_mem) {
 
   //-------------------------- Fill in values if existing
 
-  // FIX THIS< LEGACY SLOT MAP CODE
-
-  if (existing_mem != undefined) {
+  if (existing) {
     const name_fill = document.getElementById("name-fill");
     const pc = document.getElementById("pledgeClass");
     // figure out what to do with picture
     const pic = document.getElementById("pic");
 
-    name_fill.value = existing_mem.name;
-    pc.value = existing_mem.pledgeClass;
-    pic.value = existing_mem.picture;
-    big_textbox.value = existing_mem.big;
+    name_fill.value = slot.content.name;
+    console.log(slot.content.name);
+    pc.value = slot.content.pledgeClass;
+    pic.value = slot.content.picture;
+    big_textbox.value = slot.content.big;
 
     submit.value = "Update";
     submit.style.background = "orange";
@@ -161,7 +397,7 @@ function add_member(existing_mem) {
     if (big_textbox.value.length == 0) {
       big_search.innerHTML = "";
     } else {
-      for (let mem in members) {
+      for (mem in members) {
         if (
           current_in.toLowerCase() ==
           members[mem].name.substring(0, current_in.length).toLowerCase()
@@ -255,45 +491,42 @@ function add_member(existing_mem) {
         (alphabet.indexOf(pledgeClassLetters[1].toLowerCase()) + 1);
     }
 
-    if (existing_mem != undefined) {
-      // remove old member from members array
-      members.splice(members.indexOf(existing_mem), 1);
-    }
-      // add new mem for full members array in NEWEST first
+    // add new mem for full members array in NEWEST first
 
-      // if current method doesnt work, rewrite entire method and find poistion then do op rather than both at same time
-      console.log("Adding new member, calculating position...");
+    // if current method doesnt work, rewrite entire method and find poistion then do op rather than both at same time
+    console.log("Adding new member, calculating position...");
 
-      // find pos first
+    // find pos first
 
-      // if array has no members
-      if (members.length == 0) {
+    // if array has no members
+    console.log(new_mem.pledgeClassNum);
+    if (members.length == 0) {
+      members.push(new_mem);
+    } else {
+      // check if it goes first w/o looping
+      if (new_mem.pledgeClassNum >= members[0].pledgeClassNum) {
+        members.unshift(new_mem);
+      } else if (
+        new_mem.pledgeClassNum <= members[members.length - 1].pledgeClassNum
+      ) {
         members.push(new_mem);
       } else {
-        // check if it goes first w/o looping
-        if (new_mem.pledgeClassNum >= members[0].pledgeClassNum) {
-          members.unshift(new_mem);
-        } else if (
-          new_mem.pledgeClassNum <= members[members.length - 1].pledgeClassNum
-        ) {
-          members.push(new_mem);
-        } else {
-          let pos = 0;
-          for (let i = 0; i < members.length; i++) {
-            if (new_mem.pledgeClassNum >= members[i].pledgeClassNum) {
-              pos = i;
-              break;
-            }
+        let pos = 0;
+        for (let i = 0; i < members.length; i++) {
+          if (new_mem.pledgeClassNum >= members[i].pledgeClassNum) {
+            pos = i;
+            break;
           }
-          console.log("inserting at " + pos);
-          let fh = members.slice(0, pos);
-          let sh = members.slice(pos);
-          console.log(fh);
-          console.log(sh);
-          fh.push(new_mem);
-          members = fh.concat(sh);
         }
+        console.log("inserting at " + pos);
+        let fh = members.slice(0, pos);
+        let sh = members.slice(pos);
+        console.log(fh);
+        console.log(sh);
+        fh.push(new_mem);
+        members = fh.concat(sh);
       }
+    }
 
     // close overlay
     overlay.style.display = "none";
@@ -305,9 +538,9 @@ function add_member(existing_mem) {
 
     form.reset();
 
-    //console.log(new_mem);
-    //console.log(members);
-    //console.log(map);
+    console.log(new_mem);
+    console.log(members);
+    console.log(map);
 
     // update members string so download link works
     dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members));
@@ -318,24 +551,120 @@ function add_member(existing_mem) {
   };
 }
 
-// FIRST ROW OF BUTTONS THEN SUB SECTION BELOW
-let active_sub = null;
+// -------------- Updating and Editing -----------
 
-// load button
-const load = document.getElementById("load");
-load.onclick = () => {
-  // load
-  if (active_sub != null) {
-    active_sub.style.display = "none";
+// -----------------------------------------------
+
+// ---------- Creating and Loading Map -----------
+const scnd_elms = document.getElementsByClassName("scnd-bar");
+
+// Create Map Button
+
+const create_map_btn = document.getElementById("create");
+create_map_btn.onclick = () => {
+  if (scnd_elms.length > 0) {
+    main.removeChild(scnd_elms[0]);
   }
-  active_sub = document.getElementById("load-sub");
-  active_sub.style.display = "flex";
+
+  const scnd_bar = document.createElement("div");
+  scnd_bar.classList.add("bar");
+  scnd_bar.classList.add("scnd-bar");
+
+  main.insertBefore(scnd_bar, main.children[1]);
+
+  const create_btn = createButton("Add Member", "green", scnd_bar);
+  create_btn.onclick = () => {
+    create_slot_data(map.indexOf(slot), false);
+  };
+
+  const download_map_btn = document.createElement('a');
+  download_map_btn.innerText = "Download Map";
+  scnd_bar.appendChild(download_map_btn);
+
+
+  // change to display button instead of anchor tag and have the button
+  // click make an anchor elm and trigger the download same way then remove anchor tag
+  download_map_btn.onclick = (e) => {
+    download_map_btn.setAttribute('href', dataStr);
+    download_map_btn.setAttribute('download', 'map.json');
+    //download_map_btn.click();
+    //e.preventDefault();
+}
+};
+
+// -----------------------------------------------
+
+// GENERATING TIME BABY
+
+// array for storing tress
+var trees = [];
+
+// members to be added is reffed as members_needed
+// alphabet is reffed as alphabet
+// full map is reffed as full_map and should be either cleared before each gen or ensured that change will result in no change to complete map, etc: adding one little in the middle of map
+
+function findFamilyTree(member) {
+  if (member.familyTree != null) {
+    return;
+  }
+
+  // get first in family tree
+  let top = member;
+  while (top.big != null) {
+    top = top.big;
+  }
+
+  let tree = {
+    start: top,
+    end: null,
+    width: 1,
+  };
+
+  // get last, can be multiple
+  let cg = [];
+  let ng = [];
+  let lc = 99;
+  cg.push(top);
+  while (lc != 0) {
+    lc = 0;
+
+    for (let mem in cg) {
+      for (let little in cg[mem].littles) {
+        ng.push(cg.littles[little]);
+        lc++;
+      }
+    }
+
+    tree.width += lc - cg.length;
+
+    cg = ng;
+    ng = [];
+  }
+
+  tree.end = cg;
 }
 
-// load sub
-const load_file = document.getElementById("file");
-load_file.onclick = () => {
-  let input = document.createElement('input');
+// Load Map Button
+const load_map_btn = document.getElementById('load');
+
+load_map_btn.onclick = () => {
+  if (scnd_elms.length > 0) {
+    // if elms are already slotted into bar below, clear
+    main.removeChild(scnd_elms[0]);
+  }
+  // add else chain to be able to clear bar for both create and load btn
+
+  const scnd_bar = document.createElement("div");
+  scnd_bar.classList.add("bar");
+  scnd_bar.classList.add("scnd-bar");
+
+  main.insertBefore(scnd_bar, main.children[1]);
+
+  const load_file_btn = createButton("Load from File", "orange", scnd_bar);
+  const load_from_str = createButton("Load from String", 'blue', scnd_bar);
+
+  load_file_btn.onclick = () => {
+    let input = document.createElement('input');
     input.type = 'file';
 
     input.onchange = e => {
@@ -362,125 +691,15 @@ load_file.onclick = () => {
     }
 
     input.click();
-}
+  };
 
-const load_str = document.getElementById("string");
-load_str.onclick = () => {
-  // make better, more beautiful
-  let res = window.prompt("Copy the object here", "JSON Object");
-  members = JSON.parse(res);
-}
-
-// edit
-const edit = document.getElementById("edit");
-edit.onclick = () => {
-  // load
-  if (active_sub != null) {
-    active_sub.style.display = "none";
+  load_from_str.onclick = (e) => {
+    // change this later
+    let res = window.prompt("Copy the object here", "JSON Object");
+    members = JSON.parse(res);
   }
-  active_sub = document.getElementById("edit-sub");
-  active_sub.style.display = "flex";
-}
 
-// edit sub
-const add = document.querySelector("#add");
-add.onclick = () => {
-  add_member();
-}
-
-function filter_members(func) {
-  // make popup to search for member by name, and then pass it into add_member
-  const overlay = document.getElementsByClassName("full-overlay")[1];
-  overlay.style.display = "flex";
-  
-  const search = document.querySelector("#member-name-search");
-  const search_results = document.querySelector(".search-results");
-
-  search_results.innerHTML = "";
-
-  search.oninput = (e) => {
-    let val = e.target.value;
-    // check if string doesnt contain any letters
-    if (!(/[a-zA-Z]/.test(val))) {
-      search_results.innerHTML = "";
-      return;
-    }
-
-
-    let results = members.filter((mem) => {
-      return mem.name.toLowerCase().includes(val.toLowerCase());
-    });
-
-    search_results.innerHTML = "";
-    for (let i = 0; i < results.length; i++) {
-      let result = document.createElement("div");
-      result.style.fontSize = "1.5rem";
-      result.innerText = results[i].name;
-      result.onclick = () => {
-        if (func == 'edit') {
-          search_results.innerHTML = "";
-          e.target.value = "";
-          overlay.style.display = "none";
-          add_member(results[i]);
-        } else {
-          members.filter((mem) => {
-            return mem.name != results[i].name;
-          });
-          search_results.innerHTML = "";
-          e.target.value = "";
-        }
-      }
-      search_results.appendChild(result);
-    }
-  }
-}
-
-// exit button func
-const exit = document.querySelector("#find-member > p");
-exit.onclick = () => {
-  const overlay = document.getElementsByClassName("full-overlay")[1];
-  overlay.style.display = "none";
-  const search = document.querySelector("#member-name-search");
-  const search_results = document.querySelector(".search-results");
-  search.value = "";
-  search_results.innerHTML = "";
-}
-
-const edit_mem = document.querySelector("#edit-mem");
-edit_mem.onclick = () => {
-  filter_members('edit');
-}
-
-const del_mem = document.querySelector("#delete");
-del_mem.onclick = () => {
-  filter_members('delete');
-}
-
-// download button
-const download = document.getElementById("download");
-download.onclick = () => {
-  // download
-  if (active_sub != null) {
-    active_sub.style.display = "none";
-    active_sub = null;
-  }
-  let a = document.createElement("a");
-  a.href = dataStr;
-  a.download = "theta-pi-family-trees.json";
-  a.click();
-}
-
-
-// -----------------------------------------------
-
-// GENERATING TIME BABY
-
-// array for storing tress
-var trees = [];
-
-// members to be added is reffed as members_needed
-// alphabet is reffed as alphabet
-// full map is reffed as full_map and should be either cleared before each gen or ensured that change will result in no change to complete map, etc: adding one little in the middle of map
+};
 
 function gen_tree() {
   // perhaps change this to use api to change programmatically 
@@ -535,6 +754,7 @@ function gen_tree() {
 let past_members = members;
 setInterval(() => {
   if (past_members != members) {
+    correctPC(members); // all are right here
     past_members = members;
     gen_tree(); // all are right here
     gen_pc();
@@ -698,7 +918,7 @@ function gen_pc() {
   // use JSON hack, update to structuredClone once more research and adaptation is done/support to detect if iOS or not
   let copy_mems = JSON.parse(JSON.stringify(members));
 
-  let family_trees = makeTrees(copy_mems);
+  let family_trees =makeTrees(copy_mems);
   console.log("Family Trees Generated from makeTrees", family_trees); // starts here too
 
   // make grid lines for each pledge class

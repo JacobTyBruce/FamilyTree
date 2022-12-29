@@ -9,43 +9,26 @@
   </head>
   <body>
     <h1>Family Tree Program Demo</h1>
-
+    <select name="view" id="view">
+      <option value="gen">Generation View</option>
+      <option value="list">Pledge Class View</option>
+    </select>
     <div id="main">
-
       <div class="bar">
-        <button id="load">Load Tree</button>
-        <button id="edit">Edit Tree</button>
-        <div class="spacer"></div>
-        <button id="download">Download Map</button>
-        <div class="spacer"></div>
-        <button id="reset">Reset Tree</button>
-        <div class="spacer"></div>
+        <button id="create">Create Map</button>
+        <button id="load">Load Map</button>
       </div>
 
-      <div id="sub-bar">
-        <div id="load-sub">
-          <button id="file">Load From File</button>
-          <button id="string">Load From String</button>
-        </div>
+      <!-- Old Grid Setup -->
+      <canvas id="grid"></canvas>
 
-        <div id="edit-sub">
-          <button id="add">Add Member</button>
-          <button id="edit-mem">Edit Member</button>
-          <button id="delete">Delete Member</button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <select name="view" id="view">
-        <option value="gen">Generation View</option>
-        <option value="list">Pledge Class View</option>
-      </select>
-
-      <!-- Generational Tree View -->
+      <!-- New Grid Setup -->
       <div id="tree" style="width: 80%; height: 700px; border: 1px solid black;"></div>
 
-      <!-- Pledge Class Tree View -->
+      <!-- Temp Spacer -->
+      <div style="height: 20px;"></div>
+
+      <!-- Second Gen Canvas, by pledge class -->
       <div id="tree-pc"></div>
 
     </div>
@@ -94,14 +77,7 @@
     </div>
 
     <div class="full-overlay">
-      <div id="find-member">
-        <p>X</p>
-        <h1>Enter Member's Name</h1>
-        <br />
-        <input type="Enter Member Name" id="member-name-search" />
-        <div class="search-results"></div>
-      </div>
-      
+      <div class="view-slot"></div>
     </div>
 
     <script src="../familytreejs/familytree.js"></script>

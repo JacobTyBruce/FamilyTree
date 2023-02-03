@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="./main.css" />
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Family Tree Program</title>
+  </head>
+  <body>
+    <h1>Family Tree Program Demo</h1>
+
+    <div id="main">
+
+      <div class="bar">
+        <button id="load">Load Tree</button>
+        <button id="edit">Edit Tree</button>
+        <div class="spacer"></div>
+        <button id="download">Download Map</button>
+      </div>
+
+      <div id="sub-bar">
+        <div id="edit-sub">
+          <button id="add">Add Member</button>
+          <button id="edit-mem">Edit Member</button>
+          <button id="delete">Delete Member</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <select name="view" id="view">
+        <option value="gen">Generation View</option>
+        <option value="list">Pledge Class View</option>
+      </select>
+
+      <!-- Generational Tree View -->
+      <div id="tree" style="width: 80%; height: 700px; border: 1px solid black;"></div>
+
+      <!-- Pledge Class Tree View -->
+      <div id="tree-pc"></div>
+
+    </div>
+
+    <!-- Full Page Overview -->
+    <div class="full-overlay">
+      <div class="slot-entry">
+        <p class="add-exit">X</p>
+        <h1>Enter Member Data</h1>
+        <form action="" name="slot" id="slot-form">
+          <div class="form-item">
+            <label for="name">Full Name</label>
+            <br />
+            <input type="text" name="name" id="name-fill" required />
+            <br />
+          </div>
+
+          <div class="form-item">
+            <label for="pledgeClass">Pledge Class</label>
+            <br />
+            <input type="text" name="pledgeClass" id="pledgeClass" required />
+            <br />
+          </div>
+
+          <div class="form-item">
+            <label for="pic">Picture (Optional)</label>
+            <br />
+            <input type="file" accept="image/*" name="pic" id="pic" />
+            <br />
+          </div>
+
+          <div class="form-item">
+            <label for="big">Big</label>
+            <br />
+            <input type="text" name="big" id="big-entry" />
+            <div id="search"></div>
+          </div>
+
+          <div class="form-item">
+            <input type="submit" value="Submit" id="form-submit" />
+          </div>
+
+          <input type="hidden" name="slot" id="create-slot" />
+        </form>
+      </div>
+    </div>
+
+    <div class="full-overlay">
+      <div id="find-member">
+        <p>X</p>
+        <h1>Enter Member's Name</h1>
+        <br />
+        <input type="Enter Member Name" id="member-name-search" />
+        <div class="search-results"></div>
+      </div>
+      
+    </div>
+
+    <script src="../familytree.js"></script>
+    <script src="https://unpkg.com/konva@8/konva.min.js"></script>
+    <script src="./main.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "Theta-Pi-Family-Tree",
+  "version": "1.0.0",
+  "description": "A desktop app to create, edit, and view Theta Pi's Family Tree",
+  "main": "main.js",
+  "author": "Jacob Bruce",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "@types/uuid": "^9.0.0",
+    "electron": "^22.0.0"
+  },
+  "dependencies": {
+    "uuid": "^9.0.0"
+  }
+}

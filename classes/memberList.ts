@@ -31,4 +31,8 @@ export default class MemberList extends List {
         
     }
 
+    remove(item: NonNullable<Member>): void {
+        this.#members.splice(this.#members.indexOf(item), 1);
+    }
+
 }

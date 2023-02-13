@@ -28,68 +28,60 @@ const alphabet = [
 export default class Member {
     // TODO: Sort member array by pledgeClassNum
     static #member_list = [];
-    static #shallow_members = [];
     #id; // fck uuid types
     #name;
     #pledgeClass;
     #pledgeClassNum;
-    #big;
-    #littles;
+    #big; // UUID's OR Member Name if not created
+    #littles; // UUID's
     #picture;
     #bio;
     #familyTree; // figure out how to implement this later/assign automatically once added to tree?
     #width;
-    constructor(type, name, pc, big, id, littles, pic, bio) {
+    constructor(type, name, pc, big, pic, bio, id, littles) {
         // If at any point, any param is give  as an UUID, that means it comes from a JSON conversion and the member needs to be looked up because they exist
         // TYPES OF CONSTRUCTION
-        // 1. new Member(type = 1, name, pc, big, id (undefined), littles (undefined), pic (optional), bio (optional))
-        // 2. reconstruction from JSON (type = 0, name, pc, big, id, littles, pic, bio)
-        // 3. Shallow member (type = 2, name)
-        // 4. Populate Shallow member (type = 3, name, pc, big, id, littles, pic, bio)
-        // Type 0, 1 & 3 get added to members array 
+        // 1. new Member
+        // (type = 1, name, pc, big, pic (optional), bio (optional))
+        // 2. reconstruction from JSON 
+        // (type = 0, name, pc, big, pic, bio, id, littles)
+        // if big == 'root' then this.big = null
         if (type == 1) {
-            // check if member already exists in either array
+            // check if member already exists in member array
             Member.#member_list.forEach((member) => {
                 if (member.name == name) {
                     throw new Error('Member already exists');
                 }
             });
-            let shallow_member = null;
-            Member.#shallow_members.forEach((member) => {
-                if (member.name == name) {
-                    shallow_member = member;
-                }
-            });
-            if (shallow_member != null) {
-                // shallow member exists, change Id and remove from shallow list
-                shallow_member.#id = 'M' + shallow_member.#id.substring(1);
-                Member.#shallow_members.splice(Member.#shallow_members.indexOf(shallow_member), 1);
+            this.#name = name;
+            this.#id = 'M:' + uuid();
+            this.#pledgeClass = pc;
+            this.#pledgeClassNum = this.genPCNum();
+            // assign big
+            if (big == 'root') {
+                this.#big = null;
             }
             else {
-                this.#name = name;
-                this.#id = 'M' + uuid();
-            }
-            this.#pledgeClass = pc;
-            this.#pledgeClassNum = this.getPCNum();
-            // lookup if big exists, if not create shallow member
-            Member.#member_list.forEach((member) => {
-                if (member.name == big) {
-                    this.#big = member;
+                // lookup if big exists, if not assign big to string name
+                Member.#member_list.forEach((member) => {
+                    if (member.name == big) {
+                        this.#big = member.id;
+                        // add this member to big's littles array
+                        member.addLittle(this.#id);
+                    }
+                });
+                if (this.#big == undefined) {
+                    this.#big = big;
                 }
-            });
-            if (this.#big == undefined) {
-                this.#big = new Member(2, big, undefined, undefined, undefined, undefined, undefined, undefined);
             }
             // check for littles
             let temp_littles = [];
             Member.#member_list.forEach((member) => {
-                if (member.big.name == name) {
+                // big is string and not reference to member at this point, so add to littles array and change big to reference to this member
+                if (member.big == name) {
                     temp_littles.push(member);
+                    member.big = this.#id;
                 }
-            });
-            // sort little arrya according to pledgeClassNum is descending order
-            temp_littles.sort((a, b) => {
-                return a.pledgeClassNum - b.pledgeClassNum;
             });
             if (temp_littles.length == 0) {
                 this.#littles = null;
@@ -113,133 +105,43 @@ export default class Member {
             // assign width
             this.#width = this.#calculateWidth();
         }
-        else if (type == 0) {
+        else if (type == 0) { //------------------------------------------------------------------
             // reconstruct member from JSON
             this.#name = name;
             this.#id = id;
             this.#pledgeClass = pc;
-            this.#pledgeClassNum = this.getPCNum();
-            // big is already created
-            Member.#member_list.forEach((member) => {
-                if (member.name == big) {
-                    this.#big = member;
-                }
-            });
-            if (this.#big = undefined) {
-                // check shallow members
-                Member.#shallow_members.forEach((member) => {
-                    if (member.name == big) {
-                        this.#big = member;
-                    }
-                });
-            }
-            // littles array is array of ID's of littles --i dont think this works
-            if (littles.length == 0) {
-                let temp_littles = [];
-                littles.forEach((little) => {
-                    if (little[0] == 'S') {
-                        // shallow member
-                        Member.#shallow_members.forEach((member) => {
-                            if (member.id == little) {
-                                temp_littles.push(member);
-                            }
-                        });
-                    }
-                    else {
-                        // member
-                        Member.#member_list.forEach((member) => {
-                            if (member.id == little) {
-                                temp_littles.push(member);
-                            }
-                        });
-                    }
-                });
-                this.#littles = temp_littles;
-            }
-            else {
-                this.#littles = null;
-            }
-            if (pic == undefined) {
-                this.#picture = null;
-            }
-            else {
-                this.#picture = pic;
-            }
-            if (bio == undefined) {
-                this.#bio = null;
-            }
-            else {
-                this.#bio = bio;
-            }
+            this.#pledgeClassNum = this.genPCNum();
+            this.#big = big;
+            this.#littles = littles;
+            this.#picture = pic;
+            this.#bio = bio;
             this.#familyTree = null;
-        }
-        else if (type == 2) {
-            // create shallow member
-            this.#name = name;
-            this.#id = 'S' + uuid();
-            this.#pledgeClass = null;
-            this.#pledgeClassNum = null;
-            this.#big = null;
-            // check for littles
-            let temp_littles = [];
-            Member.#member_list.forEach((member) => {
-                if (member.big.name == name) {
-                    this.#littles.push(member);
-                }
-            });
-            if (temp_littles.length == 0) {
-                this.#littles = null;
-            }
-            else {
-                this.#littles = temp_littles;
-            }
-            this.#picture = null;
-            this.#bio = null;
-            this.#familyTree = null;
-            this.#width = this.#calculateWidth();
-        }
-        else if (type == 3) {
-            // find unpopulatted shallow member
-            let shallow_populate = Member.#shallow_members.find((member) => member.name == name);
-            if (shallow_populate == undefined) {
-                throw new Error('Shallow member not found');
-            }
-            shallow_populate.#id = 'M' + shallow_populate.#id.slice(1);
-            shallow_populate.#pledgeClass = pc;
-            shallow_populate.#pledgeClassNum = shallow_populate.getPCNum();
-            // lookup if big exists, if not create shallow member
-            Member.#member_list.forEach((member) => {
-                if (member.name == big) {
-                    shallow_populate.#big = member;
-                }
-            });
-            if (shallow_populate.#big == undefined) {
-                // check shallow members
-                Member.#shallow_members.forEach((member) => {
-                    if (member.name == big) {
-                        shallow_populate.#big = member;
-                    }
-                });
-                if (shallow_populate.#big == undefined) {
-                    shallow_populate.#big = new Member(2, big, undefined, undefined, undefined, undefined, undefined, undefined);
-                }
-            }
         }
         else {
             throw new Error("Invalid type of member");
         }
-        if (type == 0 || type == 1 || type == 3) {
-            Member.#member_list.push(this);
-            // sort in order of pledgeClassNum in descending order
-            Member.#member_list.sort((a, b) => {
-                return b.pledgeClassNum - a.pledgeClassNum;
-            });
-        }
+        Member.#member_list.push(this);
+        // sort in order of pledgeClassNum in descending order
+        Member.#member_list.sort((a, b) => {
+            return b.pledgeClassNum - a.pledgeClassNum;
+        });
+    }
+    static getMemberByID(id) {
+        Member.#member_list.forEach((mem) => {
+            if (mem.#id == id)
+                return mem;
+        });
+        return null;
+    }
+    static delete(mem) {
+        let tempMem = mem;
+        mem = undefined;
+        return tempMem;
     }
     static getMemberList() {
         return Member.#member_list;
     }
-    getPCNum() {
+    genPCNum() {
         if (this.#pledgeClass == null) {
             return null;
         }
@@ -257,8 +159,9 @@ export default class Member {
             let new_width = this.#littles.length;
             // add each littles length to width
             this.#littles.forEach((little) => {
-                if (little.width > 1) {
-                    new_width += little.width - 1;
+                let littleMem = Member.getMemberByID(little);
+                if (littleMem.width > 1) {
+                    new_width += littleMem.width - 1;
                 }
             });
             return new_width;
@@ -286,7 +189,9 @@ export default class Member {
         return this.#bio;
     }
     get littles() {
-        return this.#littles;
+        let lilArray = [];
+        this.#littles.forEach(lil => lilArray.push(Member.getMemberByID(lil)));
+        return lilArray;
     }
     get big() {
         return this.#big;
@@ -302,7 +207,7 @@ export default class Member {
     }
     set pledgeClass(pc) {
         this.#pledgeClass = pc;
-        this.#pledgeClassNum = this.getPCNum();
+        this.#pledgeClassNum = this.genPCNum();
     }
     set picture(pic) {
         this.#picture = pic;
@@ -310,7 +215,6 @@ export default class Member {
     set bio(bio) {
         this.#bio = bio;
     }
-    // move to Member constructor, when member is added check if member would be little of big, and if so, add to littles array
     addLittle(lil) {
         // check if little is already in littles array
         if (this.#littles != null) {
@@ -318,27 +222,17 @@ export default class Member {
                 throw new Error("Little already exists in littles array");
             }
             else {
-                // check if little is first or last in descneidng order of pledgeClassNum
-                if (lil.pledgeClassNum > this.#littles[0].pledgeClassNum) {
-                    this.#littles.unshift(lil);
-                    return;
-                }
-                else if (lil.pledgeClassNum < this.#littles[this.#littles.length - 1].pledgeClassNum) {
-                    this.#littles.push(lil);
-                    return;
-                }
-                else {
-                    // insert little in correct position in descending order
-                    this.#littles.forEach((little) => {
-                        if (lil.pledgeClassNum < little.pledgeClassNum) {
-                            this.#littles.splice(this.#littles.indexOf(little), 0, lil);
-                        }
-                    });
-                }
-                // loop through little array and insert in descending order of pledgeClassNum
-                this.#littles.forEach((little) => {
-                    if (little.pledgeClassNum < lil.pledgeClassNum) {
-                        this.#littles.splice(this.#littles.indexOf(little), 0, lil);
+                // insert then sort
+                this.#littles.unshift(lil);
+                this.#littles.sort((a, b) => {
+                    if (Member.getMemberByID(a).pledgeClassNum > Member.getMemberByID(b).pledgeClassNum) {
+                        return -1;
+                    }
+                    else if (Member.getMemberByID(a).pledgeClassNum < Member.getMemberByID(b).pledgeClassNum) {
+                        return 1;
+                    }
+                    else {
+                        return 0;
                     }
                 });
                 // recalculate width
@@ -370,26 +264,21 @@ export default class Member {
     }
     set big(big) {
         // remove self from old big's littles array
-        this.#big.removeLittle(this);
-        // add self to new big's littles array
-        big.addLittle(this);
-        // set new big
-        this.#big = big;
+        Member.getMemberByID(this.#big).removeLittle(this.#id);
+        // add self to new big's littles array - check if name or UUID
+        // UUID
+        if (big.startsWith("M:", 0)) {
+            Member.getMemberByID(big).addLittle(this.#id);
+            // set new big
+            this.#big = big;
+        }
+        else {
+        }
     }
     set familyTree(tree) {
         this.#familyTree = tree;
     }
     toJSON() {
-        // get littles ID into an array
-        let littles = [];
-        if (this.#littles) {
-            this.#littles.forEach((little) => {
-                littles.push(little.id);
-            });
-        }
-        else {
-            littles = null;
-        }
         return {
             id: this.#id,
             name: this.#name,
@@ -398,26 +287,21 @@ export default class Member {
             pledgeClassNum: this.#pledgeClassNum,
             picture: this.#picture,
             bio: this.#bio,
-            big: this.#big.id,
-            littles: littles,
+            //big: this.#big.id,
+            littles: this.#littles,
             width: this.#width
         };
     }
     delete() {
-        // check if shallow member
-        if (this.#big === null) {
-            throw new Error("Cannot delete shallow member");
-        }
-        // remove from member array
-        Member.#member_list.splice(Member.#member_list.indexOf(this), 1);
         // remove self from big's little array
-        this.#big.removeLittle(this);
-        // reset littles big to shallow instead of member
-        let new_big = new Member(2, this.#name, undefined, undefined, undefined, undefined, undefined, undefined);
-        if (this.#littles) {
-            this.#littles.forEach((little) => {
-                little.#big = new_big;
-            });
-        }
+        Member.getMemberByID(this.#big).removeLittle(this.#id);
+        // replace littles big with name instead of ID
+        this.#littles.forEach(littleID => {
+            let little = Member.getMemberByID(littleID);
+            little.big = this.#name;
+        });
+        // remove from member array and delete
+        Member.getMemberList().splice(Member.getMemberList().indexOf(this), 1);
+        Member.delete(this);
     }
 }

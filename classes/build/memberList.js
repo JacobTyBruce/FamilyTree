@@ -23,4 +23,7 @@ export default class MemberList extends List {
             }
         });
     }
+    remove(item) {
+        this.#members.splice(this.#members.indexOf(item), 1);
+    }
 }

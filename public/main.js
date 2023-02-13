@@ -10,8 +10,6 @@ Program Stats:
 
 import Tree from '../classes/build/tree.js';
 import Member  from '../classes/build/member.js';
-import List from '../classes/build/list.js';
-import MemberList from '../classes/build/memberList.js';
 
 // ERROR REPORTS
 /*

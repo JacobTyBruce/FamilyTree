@@ -1,6 +1,6 @@
 const { v4: uuid } = require('uuid');
 import Tree from './tree.js'
-import { pledgeClass, image, name } from '../types'
+import { pledgeClass, image, name } from './types'
 
 const alphabet = [
     "alpha", // 1
@@ -32,7 +32,8 @@ const alphabet = [
 export default class Member {
 
     // TODO: Sort member array by pledgeClassNum
-    static #member_list = [];
+    static #member_list:Member[] = [];
+    static alphabet = alphabet;
 
     #id: NonNullable<string>; // fck uuid types
     #name: NonNullable<name>;
@@ -50,10 +51,10 @@ export default class Member {
         name: NonNullable<name>, 
         pc: pledgeClass, 
         big: string | name, 
-        pic: image | undefined,
-        bio: string | undefined,
-        id: string | undefined, 
-        littles: string[] | undefined
+        pic: image | null,
+        bio: string | null,
+        id: string, 
+        littles: string[] | null
         ) {
 
         // If at any point, any param is give  as an UUID, that means it comes from a JSON conversion and the member needs to be looked up because they exist
@@ -67,10 +68,14 @@ export default class Member {
 
         // if big == 'root' then this.big = null
 
+        // add to array at start so that search function will work and not return null
+
+        Member.#member_list.push(this);
+
         if (type == 1) {
 
             // check if member already exists in member array
-            Member.#member_list.forEach((member) => {
+            Member.#member_list.forEach((member: Member) => {
                 if (member.name == name) {
                     throw new Error('Member already exists');
                 }
@@ -103,11 +108,11 @@ export default class Member {
             }
 
             // check for littles
+            console.log('TEST: ID TO ASSIGN TO LITTLES: ', this.#id);
             let temp_littles = [];
-            Member.#member_list.forEach((member) => {
-                // big is string and not reference to member at this point, so add to littles array and change big to reference to this member
-                if (member.big == name) {
-                    temp_littles.push(member);
+            Member.#member_list.forEach((member:Member) => {
+                if (member.big == this.#name) {
+                    temp_littles.push(member.id);
                     member.big = this.#id;
                 }
             });
@@ -151,18 +156,33 @@ export default class Member {
             throw new Error("Invalid type of member");
         }
 
-        Member.#member_list.push(this);
         // sort in order of pledgeClassNum in descending order
         Member.#member_list.sort((a, b) => {
             return b.pledgeClassNum - a.pledgeClassNum;
         });  
     }
 
-    static getMemberByID(id: string): Member {
+    static getMemberByID(searchID: string): Member {
+        // log out both strings, for testing
+        console.log('----- getMemberByID -----')
+        console.log("Search: ", searchID);
+        
+        let found = null;
         Member.#member_list.forEach((mem: Member) => {
-            if (mem.#id == id) return mem;
+            if (mem.id.trim() == searchID.trim()) {
+                console.log("Found: ", mem.id);
+                console.log("-------------------------");
+                found = mem;
+            };
         })
-        return null;
+
+        if (found != null) {
+            return found;
+        } else {
+            console.log("Not Found");
+            console.log("-------------------------")
+            return null;
+        }
     }
 
     static delete(mem: Member): Member {
@@ -172,7 +192,7 @@ export default class Member {
     }
 
     static getMemberList(): Member[] {
-        return Member.#member_list;
+        return JSON.parse(JSON.stringify(Member.#member_list));
     }
 
     genPCNum(): number | null {
@@ -232,6 +252,8 @@ export default class Member {
     }
 
     get littles(): Member[] | null {
+        if (this.#littles == null) return null;
+        
         let lilArray: Member[] = [];
         this.#littles.forEach(lil => lilArray.push(Member.getMemberByID(lil)))
         return lilArray;
@@ -314,19 +336,30 @@ export default class Member {
         }
     }
 
-    set big(big: NonNullable< | string>) {
-            // remove self from old big's littles array
-            Member.getMemberByID(this.#big).removeLittle(this.#id);
+    set big(big: NonNullable<string>) {
 
-            // add self to new big's littles array - check if name or UUID
-            // UUID
-            if (big.startsWith("M:",0)) {
-                Member.getMemberByID(big).addLittle(this.#id);
-                // set new big
-                this.#big = big;
-            } else {
+        console.log("Big: ", big);
 
+        // check if big is string or id
+
+        // if big is string (name), set big to name
+        if (!(big.startsWith("M:", 0))) {
+            // remove self from old big's littles array if the member exists
+            if (Member.getMemberByID(this.#big) != null) {
+                Member.getMemberByID(this.#big).removeLittle(this.#id);
             }
+            this.#big = big;
+        } else {
+            // check if current big is name or id
+            if (this.#big.startsWith("M:", 0)) {
+                // remove self from old big's littles array
+                Member.getMemberByID(this.#big).removeLittle(this.#id);
+            }
+            // set new big
+            this.#big = big;
+            // add self to new big's littles array
+            Member.getMemberByID(big).addLittle(this.#id);
+        }
     }
 
     set familyTree(tree: NonNullable<Tree>) {
@@ -337,7 +370,7 @@ export default class Member {
         return {
             id: this.#id,
             name: this.#name,
-            familyTree: this.#familyTree.id,
+            familyTree: null, // set to null for now, will be used more later
             pledgeClass: this.#pledgeClass,
             pledgeClassNum: this.#pledgeClassNum,
             picture: this.#picture,

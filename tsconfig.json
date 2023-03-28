@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
-        "target": "es2022",
+        "target": "ESNext",
         "watch": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "lib": ["esnext", "dom"],
         "moduleResolution": "node",
         "types": ["uuid", "node"],
-        "module": "CommonJS",
+        "module": "ES2022",
+        "outDir": "./classes/build",
     },
     "include": [
         "./classes/*.ts",

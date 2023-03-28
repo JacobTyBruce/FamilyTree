@@ -1,3 +1,4 @@
+import Member from "./member.js";
 const { v4: uuid } = require('uuid');
 export default class Tree {
     static #tree_list = [];
@@ -6,11 +7,11 @@ export default class Tree {
     #root;
     #end;
     #width;
-    constructor(root, name) {
+    constructor(root_id, name) {
         // assign id
-        this.#id = 'T' + uuid();
+        this.#id = 'T:' + uuid();
         // assign root
-        this.#root = root;
+        this.#root = root_id;
         // assign name if present
         if (name) {
             this.#name = name;
@@ -19,13 +20,24 @@ export default class Tree {
             this.#name = "Untitled Family Tree";
         }
         // calculate width
-        this.#width = this.#root.width;
+        console.log("Constructor: Root Member", root_id);
+        console.log("Constructor: Root Member Get", Member.getMemberByID(root_id));
+        this.#width = Member.getMemberByID(this.#root).width;
     }
     static getTreeList() {
         return Tree.#tree_list;
     }
+    static resetTreeList() {
+        Tree.#tree_list = [];
+    }
     static getTreeByID(id) {
         return Tree.#tree_list.find(tree => tree.id === id);
+    }
+    static addTree(tree) {
+        Tree.#tree_list.push(tree);
+    }
+    static removeTree(id) {
+        Tree.#tree_list = Tree.#tree_list.filter(tree => tree.id !== id);
     }
     get id() {
         return this.#id;
@@ -47,18 +59,9 @@ export default class Tree {
     }
     set root(root) {
         this.#root = root;
-        this.#width = this.#root.width;
+        this.#width = Member.getMemberByID(this.#root).width;
     }
     set end(end) {
         this.#end = end;
-    }
-    toJSON() {
-        return {
-            id: this.#id,
-            name: this.#name,
-            root: this.#root.id,
-            end: this.#end.id,
-            width: this.#width
-        };
     }
 }

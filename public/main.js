@@ -8,8 +8,8 @@ Program Stats:
 
 */
 
-import Tree from '../classes/build/tree.js';
-import Member  from '../classes/build/member.js';
+import Tree from "../classes/build/tree.js";
+import Member from "../classes/build/member.js";
 
 // ERROR REPORTS
 /*
@@ -18,10 +18,6 @@ import Member  from '../classes/build/member.js';
   It works for now, but is a very ruggid fix and would like to find out what is going on later
 
 */
-
-
-
-
 
 // main file for html display
 
@@ -32,14 +28,13 @@ const pledge_class_row_height = 100;
 const pledge_class_node_w = 150;
 const pledge_class_node_h = 80;
 
-
 // Pledge Class View Setup
-let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
+let pcts = window.getComputedStyle(document.getElementById("tree-pc"));
 
 var stage = new Konva.Stage({
   container: "tree-pc",
-  width: pcts.width.replace("px",""),
-  height: pcts.height.replace("px",""),
+  width: pcts.width.replace("px", ""),
+  height: pcts.height.replace("px", ""),
   draggable: true,
 });
 
@@ -56,25 +51,29 @@ select_view.onchange = (v) => {
     document.getElementById("tree").style.display = "none";
     document.getElementById("tree-pc").style.display = "block";
   }
-}
+};
 
 // SECTION - Buttons
 
 // load button - and sub sections
-const load_btn = document.querySelector('#load');
+const load_btn = document.querySelector("#load");
 
 load_btn.onclick = () => {
+  let input = document.createElement("input");
+  input.type = "file";
 
-  let input = document.createElement('input');
-  input.type = file;
-
-  input.onchange = e => {
+  input.onchange = (e) => {
+    console.log("file selected");
     // getting a hold of the file reference
     let file = e.target.files[0];
 
     let reader = new FileReader();
-    
-    reader.addEventListener('load', (event) => {
+    //  read file contents
+    reader.readAsText(file);
+    console.log("file loaded");
+
+    reader.onload = (event) => {
+      console.log("File Reader ready");
       let r = event.target.result;
 
       try {
@@ -82,23 +81,38 @@ load_btn.onclick = () => {
 
         // convert data to member objects
         for (let m in data) {
-          new Member(0, data[m].name, data[m].pledgeClass, data[m].big, data[m].id, data[m].littles, data[m].pic, data[m].bio);
+          console.log("adding member");
+          new Member(
+            0,
+            data[m].name,
+            data[m].pledgeClass,
+            data[m].big,
+            data[m].pic,
+            data[m].bio,
+            data[m].id,
+            data[m].littles
+          );
         }
-      } catch {
-        alert("Invalid File");
-      }
 
-      //  read file contents
-      reader.readAsText(file);
-    });
+        // generate tree view
+        gen_tree();
+        gen_pc();
+      } catch (e) {
+        alert("Invalid File");
+        console.log(e);
+      }
+    };
+
+    reader.onerror = (event) => {
+      alert("Error reading file");
+    };
   };
 
   input.click();
-
-}
+};
 
 // edit button - and sub sections
-const edit_btn = document.querySelector('#edit');
+const edit_btn = document.querySelector("#edit");
 
 let sub = false;
 edit_btn.onclick = () => {
@@ -109,16 +123,16 @@ edit_btn.onclick = () => {
     document.getElementById("edit-sub").style.display = "block";
     sub = true;
   }
-}
+};
 
 // add button
-const add_btn = document.querySelector('#add');
-const edit_mem = document.querySelector('#edit-mem');
-const delete_btn = document.querySelector('#delete');
+const add_btn = document.querySelector("#add");
+const edit_mem = document.querySelector("#edit-mem");
+const delete_btn = document.querySelector("#delete");
 
 add_btn.onclick = () => {
   add_member();
-}
+};
 
 edit_mem.onclick = () => {
   document.body.classList.add("disable-scrolling");
@@ -141,18 +155,18 @@ edit_mem.onclick = () => {
         div.innerHTML = memberList[m].name;
         div.onclick = () => {
           add_member(memberList[m]);
-        }
+        };
         results.appendChild(div);
       }
     }
-  }
+  };
 
   const close = document.querySelector("#find-member > p");
   close.onclick = () => {
     overlay.style.display = "none";
     document.body.classList.remove("disable-scrolling");
-  }
-}
+  };
+};
 
 delete_btn.onclick = () => {
   document.body.classList.add("disable-scrolling");
@@ -174,31 +188,29 @@ delete_btn.onclick = () => {
         div.innerHTML = memberList[m].name;
         div.onclick = () => {
           memberList[m].delete();
-        }
+        };
         results.appendChild(div);
       }
     }
-  }
-}
+  };
+};
 
 // save button
-const download_btn = document.querySelector('#download');
+const download_btn = document.querySelector("#download");
 
 download_btn.onclick = () => {
   let a = document.createElement("a");
   a.href = dataStr;
   a.download = "theta-pi-family-trees.json";
   a.click();
-}
-
+};
 
 // TODO = edit add member function below to work with new member class
 
 // Member Creating/Editing ----------------------
 
 function add_member(existing_mem) {
-
-  // create slot data input menu
+  // create member data input menu
   document.body.classList.add("disable-scrolling");
 
   const overlay = document.getElementsByClassName("full-overlay")[0];
@@ -294,16 +306,26 @@ function add_member(existing_mem) {
 
     // TODO - convert picture to string to store
 
-    // create new member object
-    new Member(1, freshen(e.target[0].value), freshen(e.target[1].value), freshen(big_textbox.value), undefined, undefined, (e.target[2].files.length > 0 ? "Picture" : null), "Bio");
-
-    if (existing_mem != undefined) {
+    let c_mem = null;
+    if (existing_mem == undefined) {
+      // create new member object
+      c_mem = new Member(
+        1,
+        freshen(e.target[0].value),
+        freshen(e.target[1].value),
+        freshen(big_textbox.value),
+        e.target[2].files.length > 0 ? "Picture" : null,
+        "Bio"
+      );
+    } else {
       // update changes
       existing_mem.name = freshen(e.target[0].value);
       existing_mem.pledgeClass = freshen(e.target[1].value);
       existing_mem.big = freshen(big_textbox.value);
-      existing_mem.picture = (e.target[2].files.length > 0 ? "Picture" : null);
+      existing_mem.picture = e.target[2].files.length > 0 ? "Picture" : null;
       existing_mem.bio = "Bio";
+
+      c_mem = existing_mem;
     }
 
     // close overlay
@@ -315,8 +337,10 @@ function add_member(existing_mem) {
     }
 
     form.reset();
-    
+
     // refresh tree view
+    console.log("Refreshing with this tree: ", Member.getMemberList());
+    console.log(c_mem)
     gen_tree();
     gen_pc();
   };
@@ -375,9 +399,7 @@ function findFamilyTree(member) {
 }
 
 function gen_tree() {
-  const members = Members.getMemberList();
-  // perhaps change this to use api to change programmatically 
-  // instead of packaging in one function
+  const members = Member.getMemberList();
 
   // create tree objects from members array
   // NEEDED PROPS
@@ -385,110 +407,108 @@ function gen_tree() {
 
   // create object for nodes
   let tree_nodes = [];
-  for (let mem in members) {
-    let current_mem = members[mem];
+  let i = 1;
+  members.forEach((mem) => {
+    console.log(i,mem);
+    i++;
     let node_obj = {};
 
-    node_obj.id = current_mem.id;
+    node_obj.id = mem.id;
 
-    let big = (current_mem.big.big != null);
-    if (big) {node_obj.fid = big.tree_id; }
-    
+    if (mem.big != null && (mem.big.substring(0,2) == "M:")) {
+      node_obj.fid = Member.getMemberByID(mem.big).id;
+    }
+
     // assignment works as node_obj[ defined field name ]
 
-    node_obj.Name = current_mem.name;
+    node_obj.Name = mem.name;
 
-    node_obj["Pledge Class"] = current_mem.pledgeClass;
+    node_obj["Pledge Class"] = mem.pledgeClass;
 
     tree_nodes.push(node_obj);
-  }
+  });
 
   // Tree Generation --------------------
-  var tree = new FamilyTree(document.getElementById('tree'), {
+  var tree = new FamilyTree(document.getElementById("tree"), {
     nodeBinding: {
       field_0: "Name",
-      field_1: "Pledge Class"
+      field_1: "Pledge Class",
     },
-    nodes: tree_nodes
+    nodes: tree_nodes,
   });
 }
 
 // --------------- Second Gen - By Pledge Class ---------------------
 
-
-function makeTrees(mems) {
-
+function makeTrees() {
+  // reset trees
+  Tree.resetTreeList();
+  let mems = Member.getMemberList();
   // make family tree, and everytime member is discovered, remove from members array passed in
 
   // go thru each mem in array, array will be removing items during iteration
   while (mems.length > 0) {
-    let start = mems[mems.length-1];
-    findWidth(start);
+    let start = mems[mems.length - 1];
+    console.log("Start: ", start)
 
-    console.log(start.littles) // wrong here
     // start at last member in member array, and then gen tree off of him, then move to next member
 
-    let new_tree = new Tree({root: start});
-    let youngest = start.pledgeClassNum;
+    console.log("Tree Generation Start: ", start);
+    let new_tree = new Tree(start.id);
+    let youngest = start;
 
     // remove first member from array
-    mems = mems.filter(x => x.name != start.name)
+    mems = mems.filter((x) => x.name != start.name);
 
-    let next_mems = start.littles;
+    // null protection
+    let next_mems;
+    if (start.littles == null) {
+      next_mems = [];
+    } else {
+      next_mems = start.littles;
+    }
 
-    // simply nav thru each member in tree -- GOTTA be because of shallow copy or something
+    // simply nav thru each member in tree
     while (next_mems.length > 0) {
       let temp_mems = [];
-      next_mems.forEach(mem => {
-        // try and freshen value with correctPC
-        correctPC(mem);
+      next_mems.forEach((mem) => {
 
-        // fuck shallow copies of objects
-        mem = findMemberByName(mem.name);
-
-        // check if pledgeClassNum is less than current youngest
-        if (mem.pledgeClassNum > youngest) {
+        // check for younger guy
+        if (mem.pledgeClassNum > youngest.pledgeClassNum) {
           // if so, set as new youngest
-          youngest = mem.pledgeClassNum;
+          youngest = mem;
         }
-        
+
         // add littles to temp lil's if exist
-        // ERROR, not finding all littles -- got fixed???
+        if (mem.littles != null) {
+          temp_mems = temp_mems.concat(mem.littles);
+        }
 
-        if (mem.littles.length > 0) { temp_mems = temp_mems.concat(mem.littles); }
-
-        // filter members out of mems array and also assign width at time -- MAYBE find better time to assign width, this just so happens to iterate over each member
-        findWidth(mem);
-        mems = mems.filter(x => x.name != mem.name);
-      })
+        // filter members out of mems array
+        mems = mems.filter((x) => x.name != mem.name);
+      });
 
       // copy temp to main
       next_mems = temp_mems;
     }
-    new_tree.end = youngest;
-    trees.push(new_tree);
-
+    new_tree.end = youngest.id;
+    Tree.addTree(new_tree);
   }
-  return trees;
 }
 
-const node_width = 55;
-const node_height = 25;
-
 // responsive layout
-window.addEventListener('resize', () => {
-  let pcts = window.getComputedStyle(document.getElementById('tree-pc'));
+window.addEventListener("resize", () => {
+  let pcts = window.getComputedStyle(document.getElementById("tree-pc"));
 
   stage = new Konva.Stage({
     container: "tree-pc",
-    width: pcts.width.replace("px",""),
-    height: pcts.height.replace("px",""),
+    width: pcts.width.replace("px", ""),
+    height: pcts.height.replace("px", ""),
     draggable: true,
   });
 
-  stage.add(layer)
-
-})
+  stage.add(layer);
+});
 
 // doesnt get used, could use ig?
 function tree_alloc(width, length, x, y) {
@@ -497,123 +517,132 @@ function tree_alloc(width, length, x, y) {
     y: y,
     width: width,
     height: height,
-    fill: 'red',
-    stroke: 'black',
-    strokeWidth: 4
-  }
+    fill: "red",
+    stroke: "black",
+    strokeWidth: 4,
+  };
 }
 
 function gen_pc() {
-
   layer.destroyChildren();
 
-
-  // use JSON hack, update to structuredClone once more research and adaptation is done/support to detect if iOS or not
-  let copy_mems = JSON.parse(JSON.stringify(members));
-
-  let family_trees =makeTrees(copy_mems);
+  makeTrees(); // possibly move to Member class
+  const family_trees = Tree.getTreeList();
   console.log("Family Trees Generated from makeTrees", family_trees); // starts here too
 
   // make grid lines for each pledge class
 
-  console.log('Making Grid Lines')
+  console.log("Making Grid Lines");
+
+  const members = Member.getMemberList();
 
   let end = members[0].pledgeClassNum;
   for (let i = 1; i <= end; i++) {
-    let color = (i%2 == 0) ? 'blue' : 'orange';
+    let color = i % 2 == 0 ? "blue" : "orange";
     let pc_end_line = new Konva.Line({
-      points: [ 100, i*pledge_class_row_height, 2000, i*pledge_class_row_height ],
+      points: [
+        100,
+        i * pledge_class_row_height,
+        2000,
+        i * pledge_class_row_height,
+      ],
       stroke: color,
-      strokeWidth: 4
+      strokeWidth: 4,
     });
 
     let pledge_class_name = "";
     if (i <= 24) {
-      pledge_class_name = alphabet[i-1];
-    }
-    else if (i%24 == 0) {
-      pledge_class_name = alphabet[Math.floor(i/24)-2];
-      pledge_class_name += " " + alphabet[23];
+      pledge_class_name = Member.alphabet[i - 1];
+    } else if (i % 24 == 0) {
+      pledge_class_name = Member.alphabet[Math.floor(i / 24) - 2];
+      pledge_class_name += " " + Member.alphabet[23];
     } else {
-      pledge_class_name = alphabet[Math.floor(i/24)-1];
-      pledge_class_name += " " + alphabet[i-(Math.floor(i/24)*24)-1];
+      pledge_class_name = Member.alphabet[Math.floor(i / 24) - 1];
+      pledge_class_name += " " + Member.alphabet[i - Math.floor(i / 24) * 24 - 1];
     }
-
 
     let pc_name = new Konva.Text({
       x: 0,
-      y: i*pledge_class_row_height - 10,
-      text: i + ' ' + pledge_class_name,
+      y: i * pledge_class_row_height - 10,
+      text: i + " " + pledge_class_name,
       fontSize: 12,
-      fontFamily: 'Calibri',
-      fill: 'black',
+      fontFamily: "Calibri",
+      fill: "black",
     });
 
     layer.add(pc_end_line);
     layer.add(pc_name);
   }
 
+  // TODO: At some point make it so that box/grid view cant go past first/last members on every side, essentailly creating a boundary box
+
   // reserve tree space / develop trees
 
-  console.log('Developing Trees')
-  // space where family trees can begin developing, start after line generation
+  console.log("Developing Trees");
+  // space where family trees can begin developing, start after line generation initially
   const start_space = 110;
 
   // array for next available space in row
-  let next_available_space = []
-  next_available_space.fill(start_space,0,members[0].pledgeClassNum-1);
+  let next_available_space = [];
+  next_available_space.fill(start_space, 0, members[0].pledgeClassNum - 1);
 
   // defined boxes for each family tree
-  family_trees.forEach(tree => {
+  family_trees.forEach((tree) => {
     console.log(tree);
 
     // get x value by looping over next_available_space to find most compatible space
     // compatible space = the largest value in next_available_space that corresponds to pc numbers
     let x = start_space;
 
-    for (let i = tree.root.pledgeClassNum; i < end+1; i++) {
-      if (next_available_space[i-1] > x) {
-        x = next_available_space[i-1];
+    for (let i = Member.getMemberByID(tree.root).pledgeClassNum; i < end + 1; i++) {
+      if (next_available_space[i - 1] > x) {
+        x = next_available_space[i - 1];
       }
     }
 
     // update next_avaialbe_space array
     // loops over next_available_space in regards to the pledsge class numbers and updates the next available space to the width of the tree added
-    for (let i = tree.root.pledgeClassNum; i < end+1; i++) {
-      next_available_space[i-1] = x+(tree.width*pledge_class_node_w)+50;
+    for (let i = Member.getMemberByID(tree.root).pledgeClassNum; i < end + 1; i++) {
+      next_available_space[i - 1] = x + tree.width * pledge_class_node_w + 50;
     }
-
-    // Not sure what the fuck is going on, but somehow it knows when next big is and reserves space up until that class, but also doesnt claim all the way down, at least one tree doesn't (with luke)
-
-    // also probably need to update width, because riley's family tree is fat in spreadsheet but takes up less than cam's in program
-    // ^^^^ figure out better 'real width' claculation, one right now is fat as fuck ^^^
 
     // w = 2| 51 | 2
     // 51 so odd can be centered
 
-    console.log("Tree reserved space: x: " + x + "->" + x+tree.width*55 + " y: " + tree.root.pledgeClassNum*25 + "->" + tree.end*25);
+    console.log(
+      "Tree reserved space: x: " +
+        x +
+        "->" +
+        x +
+        tree.width * 55 +
+        " y: " +
+        Member.getMemberByID(tree.root).pledgeClassNum * 25 +
+        "->" +
+        tree.end * 25
+    );
 
     let res_bloc = {
       x: x,
-      y: tree.root.pledgeClassNum*pledge_class_row_height,
-      width: tree.width*pledge_class_node_w,
-      height: (tree.end+1)*pledge_class_row_height-tree.root.pledgeClassNum*pledge_class_row_height,
-      stroke: '#' + Math.floor(Math.random()*16777215).toString(16),
-    }
+      y: Member.getMemberByID(tree.root).pledgeClassNum * pledge_class_row_height,
+      width: tree.width * pledge_class_node_w,
+      height:
+        (tree.end + 1) * pledge_class_row_height -
+        Member.getMemberByID(tree.root).pledgeClassNum * pledge_class_row_height,
+      stroke: "#" + Math.floor(Math.random() * 16777215).toString(16),
+    };
 
-    let reserved_space = new Konva.Rect(res_bloc)
+    let reserved_space = new Konva.Rect(res_bloc);
 
     layer.add(reserved_space);
 
     // add members to resrved place
     // go to first member in tree and generate from there
-    drawGen(x, [tree.root])
-
-  })
+    drawGen(x, [tree.root]);
+  });
 
   // for testing purposes
-  // pledgeClasses are wrong here - ERROR 
-  console.log("Family Trees: ", family_trees)
+  // pledgeClasses are wrong here - ERROR
+  console.log("Family Trees: ", family_trees);
   return family_trees;
 }
 
@@ -621,21 +650,37 @@ function gen_pc() {
 function correctPC(set) {
   if (set.pledgeClassNum || set.name) {
     let pcl = set.pledgeClass.split(" ");
-    let correctPc = (alphabet.indexOf(pcl[0].toLowerCase())+1) * 24 +
-                    (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
+    let correctPc =
+      (alphabet.indexOf(pcl[0].toLowerCase()) + 1) * 24 +
+      (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
 
     if (set.pledgeClassNum != correctPc) {
-      console.log("Corrected " + set.name + "'s pledge class number from " + set.pledgeClassNum + " to " + correctPc);
+      console.log(
+        "Corrected " +
+          set.name +
+          "'s pledge class number from " +
+          set.pledgeClassNum +
+          " to " +
+          correctPc
+      );
       set.pledgeClassNum = correctPc;
     }
   } else {
     for (let mem of set) {
       let pcl = mem.pledgeClass.split(" ");
-      let correctPc = (alphabet.indexOf(pcl[0].toLowerCase())+1) * 24 +
-                      (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
+      let correctPc =
+        (alphabet.indexOf(pcl[0].toLowerCase()) + 1) * 24 +
+        (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
 
       if (mem.pledgeClassNum != correctPc) {
-        console.log("Corrected " + mem.name + "'s pledge class number from " + mem.pledgeClassNum + " to " + correctPc);
+        console.log(
+          "Corrected " +
+            mem.name +
+            "'s pledge class number from " +
+            mem.pledgeClassNum +
+            " to " +
+            correctPc
+        );
         mem.pledgeClassNum = correctPc;
       } else {
         //console.log(mem.name +"'s pledge class number was correct: " + mem.pledgeClass + ": " + mem.pledgeClassNum);
@@ -645,9 +690,10 @@ function correctPC(set) {
 }
 
 function drawGen(avail_space, generation, last_line) {
-  // fix pledgec class numbers
-  correctPC(generation);
-
+  // convert generation to array of members so theres less calls to getMemberByID
+  console.log("Generation before map: ", generation);
+  generation = generation.map((mem) => Member.getMemberByID(mem));
+  console.log("Generation after map: ", generation);
 
   // avail_space is where the available space starts
   // generation is an array of members in the generation
@@ -659,67 +705,97 @@ function drawGen(avail_space, generation, last_line) {
   // then use the space used in avail_space as next avail_space and the littles as generation
   if (generation.length == 1) {
     let person = new Konva.Rect({
-      x: (avail_space+((generation[0].width*pledge_class_node_w)/2))-(pledge_class_node_w/2),
-      y: generation[0].pledgeClassNum*pledge_class_row_height,
+      x:
+        avail_space +
+        (generation[0].width * pledge_class_node_w) / 2 -
+        pledge_class_node_w / 2,
+      y: generation[0].pledgeClassNum * pledge_class_row_height,
       width: pledge_class_node_w,
       height: pledge_class_node_h,
-      fill: 'blue',
+      fill: "blue",
     });
 
     let name = new Konva.Text({
-      x: (avail_space+((generation[0].width*pledge_class_node_w)/2))-(pledge_class_node_w/2)+3,
-      y: generation[0].pledgeClassNum*pledge_class_row_height+4,
+      x:
+        avail_space +
+        (generation[0].width * pledge_class_node_w) / 2 -
+        pledge_class_node_w / 2 +
+        3,
+      y: generation[0].pledgeClassNum * pledge_class_row_height + 4,
       text: generation[0].name.split(" ")[0],
       fontSize: 12,
-      fontFamily: 'Calibri',
-      fill: 'green',
+      fontFamily: "Calibri",
+      fill: "green",
     });
 
     if (last_line != undefined) {
       // draw line up to previous line
       let line = new Konva.Line({
-        points: [avail_space+((generation[0].width*pledge_class_node_w)/2), generation[0].pledgeClassNum*pledge_class_row_height , avail_space+((generation[0].width*pledge_class_node_w)/2), last_line[1]],
-        stroke: 'black',
+        points: [
+          avail_space + (generation[0].width * pledge_class_node_w) / 2,
+          generation[0].pledgeClassNum * pledge_class_row_height,
+          avail_space + (generation[0].width * pledge_class_node_w) / 2,
+          last_line[1],
+        ],
+        stroke: "black",
         strokeWidth: 1,
-      })
+      });
       layer.add(line);
     }
-    
 
     layer.add(person);
     layer.add(name);
 
     // run again if there are littles
-    if (generation[0].littles.length > 0) {
+    if (generation[0].littles != null) {
       // draw line 10 pixels below node, centered
       let line = new Konva.Line({
-        points: [avail_space+((generation[0].width*pledge_class_node_w)/2), generation[0].pledgeClassNum*pledge_class_row_height+pledge_class_node_h, avail_space+((generation[0].width*pledge_class_node_w)/2), generation[0].pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10],
-        stroke: 'black',
+        points: [
+          avail_space + (generation[0].width * pledge_class_node_w) / 2,
+          generation[0].pledgeClassNum * pledge_class_row_height +
+            pledge_class_node_h,
+          avail_space + (generation[0].width * pledge_class_node_w) / 2,
+          generation[0].pledgeClassNum * pledge_class_row_height +
+            pledge_class_node_h +
+            10,
+        ],
+        stroke: "black",
         strokeWidth: 1,
-      })
+      });
       layer.add(line);
-      drawGen(avail_space, generation[0].littles, [avail_space+((generation[0].width*pledge_class_node_w)/2),generation[0].pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10]);
+      console.log("Generation 0",generation[0]);
+      drawGen(avail_space, generation[0].littles, [
+        avail_space + (generation[0].width * pledge_class_node_w) / 2,
+        generation[0].pledgeClassNum * pledge_class_row_height +
+          pledge_class_node_h +
+          10,
+      ]);
     }
-
   } else {
     let next_available_space = avail_space;
     for (let mem of generation) {
-
       let person = new Konva.Rect({
-        x: next_available_space+((mem.width*pledge_class_node_w)/2)-(pledge_class_node_w/2),
-        y: mem.pledgeClassNum*pledge_class_row_height,
+        x:
+          next_available_space +
+          (mem.width * pledge_class_node_w) / 2 -
+          pledge_class_node_w / 2,
+        y: mem.pledgeClassNum * pledge_class_row_height,
         width: pledge_class_node_w,
         height: pledge_class_node_h,
-        fill: 'orange',
-      })
+        fill: "orange",
+      });
 
       let name = new Konva.Text({
-        x: next_available_space+((mem.width*pledge_class_node_w)/2)-(pledge_class_node_w/2)+1,
-        y: mem.pledgeClassNum*pledge_class_row_height+4,
+        x:
+          next_available_space +
+          (mem.width * pledge_class_node_w) / 2 -
+          pledge_class_node_w / 2 +
+          1,
+        y: mem.pledgeClassNum * pledge_class_row_height + 4,
         text: mem.name.split(" ")[0],
         fontSize: 12,
-        fontFamily: 'Calibri',
-        fill: 'green',
+        fontFamily: "Calibri",
+        fill: "green",
       });
 
       layer.add(person);
@@ -728,34 +804,57 @@ function drawGen(avail_space, generation, last_line) {
       if (last_line != undefined) {
         // draw line using L connectopn, using two lines, one up, and one to the side
         let up_line = new Konva.Line({
-          points: [next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height, next_available_space+((mem.width*pledge_class_node_w)/2), last_line[1]],
-          stroke: 'black',
+          points: [
+            next_available_space + (mem.width * pledge_class_node_w) / 2,
+            mem.pledgeClassNum * pledge_class_row_height,
+            next_available_space + (mem.width * pledge_class_node_w) / 2,
+            last_line[1],
+          ],
+          stroke: "black",
           strokeWidth: 1,
-        })
+        });
 
         let side_line = new Konva.Line({
-          points: [next_available_space+((mem.width*pledge_class_node_w)/2), last_line[1], last_line[0], last_line[1]],
-          stroke: 'black',
+          points: [
+            next_available_space + (mem.width * pledge_class_node_w) / 2,
+            last_line[1],
+            last_line[0],
+            last_line[1],
+          ],
+          stroke: "black",
           strokeWidth: 1,
-        })
+        });
 
         layer.add(up_line);
         layer.add(side_line);
       }
 
       // add line below and run again if there are littles
-      if (mem.littles.length > 0) {
+      if (mem.littles != null) {
         // draw a line below the node 10 points below, centered in middle of node
         let line = new Konva.Line({
-          points: [next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height+pledge_class_node_h, next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10],
-          stroke: 'black',
+          points: [
+            next_available_space + (mem.width * pledge_class_node_w) / 2,
+            mem.pledgeClassNum * pledge_class_row_height + pledge_class_node_h,
+            next_available_space + (mem.width * pledge_class_node_w) / 2,
+            mem.pledgeClassNum * pledge_class_row_height +
+              pledge_class_node_h +
+              10,
+          ],
+          stroke: "black",
           strokeWidth: 1,
-        })
+        });
         layer.add(line);
-        drawGen(next_available_space, mem.littles, [next_available_space+((mem.width*pledge_class_node_w)/2), mem.pledgeClassNum*pledge_class_row_height+pledge_class_node_h+10]);
+        console.log("drawing littles...")
+        drawGen(next_available_space, mem.littles.map(little => little.id), [
+          next_available_space + (mem.width * pledge_class_node_w) / 2,
+          mem.pledgeClassNum * pledge_class_row_height +
+            pledge_class_node_h +
+            10,
+        ]);
       }
       // go to next generation using next available space and current mem.length and then this members littles
-      next_available_space += mem.width*pledge_class_node_w;
+      next_available_space += mem.width * pledge_class_node_w;
     }
   }
 }

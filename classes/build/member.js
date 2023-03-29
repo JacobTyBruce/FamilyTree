@@ -71,6 +71,10 @@ export default class Member {
                         this.#big = member.id;
                         // add this member to big's littles array
                         member.addLittle(this.#id);
+                        // add to family tree -- set as end if pledge class is greater then end
+                        if (Member.getMemberByID(member.familyTree.end).pledgeClassNum < this.#pledgeClassNum) {
+                            member.familyTree.end = this.id;
+                        }
                     }
                 });
                 if (this.#big == undefined) {

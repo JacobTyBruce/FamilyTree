@@ -440,6 +440,7 @@ function gen_tree() {
 
 // --------------- Second Gen - By Pledge Class ---------------------
 
+// NOTE: This should be done in Member class once little is discovered, MOVE immediately
 function makeTrees() {
   // reset trees
   Tree.resetTreeList();
@@ -637,7 +638,7 @@ function gen_pc() {
 
     // add members to resrved place
     // go to first member in tree and generate from there
-    drawGen(x, [tree.root]);
+    drawGen(x, [Member.getMemberByID(tree.root)]);
   });
 
   // for testing purposes
@@ -689,11 +690,12 @@ function correctPC(set) {
   }
 }
 
+// PARAMS
+// avail_space = where the available space starts
+// generation = an array of members (type = Member) in the generation
+// last_line = the line draw from center down 10 pixels, used to draw children towards
 function drawGen(avail_space, generation, last_line) {
-  // convert generation to array of members so theres less calls to getMemberByID
-  console.log("Generation before map: ", generation);
-  generation = generation.map((mem) => Member.getMemberByID(mem));
-  console.log("Generation after map: ", generation);
+  // if generation is larger than 1 person, go from first member to left and get the width property on member and use it to reserve portion of avail_space
 
   // avail_space is where the available space starts
   // generation is an array of members in the generation
@@ -763,7 +765,7 @@ function drawGen(avail_space, generation, last_line) {
         strokeWidth: 1,
       });
       layer.add(line);
-      console.log("Generation 0",generation[0]);
+      console.log("Generation 0", generation[0]);
       drawGen(avail_space, generation[0].littles, [
         avail_space + (generation[0].width * pledge_class_node_w) / 2,
         generation[0].pledgeClassNum * pledge_class_row_height +

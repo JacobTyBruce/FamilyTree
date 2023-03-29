@@ -10,7 +10,6 @@ export default class Tree {
     #name: string;
     #root: NonNullable<string>;
     #end: NonNullable<string>;
-    #width: NonNullable<number>;
 
     constructor(root_id: string, name: string) {
         // assign id
@@ -31,7 +30,6 @@ export default class Tree {
         console.log("Constructor: Root Member", root_id)
         console.log("Constructor: Root Member Get", Member.getMemberByID(root_id));
 
-        this.#width = Member.getMemberByID(this.#root).width;
     }
 
     static getTreeList(): NonNullable<Tree[]> {
@@ -71,7 +69,7 @@ export default class Tree {
     }
 
     get width(): NonNullable<number> {
-        return this.#width;
+        return Member.getMemberByID(this.#root).width;
     }
 
     set name(name: string) {
@@ -80,7 +78,6 @@ export default class Tree {
 
     set root(root: NonNullable<string>) {
         this.#root = root;
-        this.#width = Member.getMemberByID(this.#root).width;
     }
  
     set end(end: NonNullable<string>) {

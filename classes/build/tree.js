@@ -6,7 +6,6 @@ export default class Tree {
     #name;
     #root;
     #end;
-    #width;
     constructor(root_id, name) {
         // assign id
         this.#id = 'T:' + uuid();
@@ -22,7 +21,6 @@ export default class Tree {
         // calculate width
         console.log("Constructor: Root Member", root_id);
         console.log("Constructor: Root Member Get", Member.getMemberByID(root_id));
-        this.#width = Member.getMemberByID(this.#root).width;
     }
     static getTreeList() {
         return Tree.#tree_list;
@@ -52,14 +50,13 @@ export default class Tree {
         return this.#end;
     }
     get width() {
-        return this.#width;
+        return Member.getMemberByID(this.#root).width;
     }
     set name(name) {
         this.#name = name;
     }
     set root(root) {
         this.#root = root;
-        this.#width = Member.getMemberByID(this.#root).width;
     }
     set end(end) {
         this.#end = end;

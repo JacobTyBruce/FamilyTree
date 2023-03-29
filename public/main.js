@@ -2,9 +2,9 @@
 
 Program Stats:
 
-  Suicide Attempts: 3
-  Pounds of hair lost: 2.34
-  Lines of Code Written & Then Deleted: Err
+  Suicide Attempts: 5
+  Pounds of hair lost: 15.64
+  Lines of Code Written & Then Deleted: Way too fukin many
 
 */
 
@@ -440,62 +440,6 @@ function gen_tree() {
 
 // --------------- Second Gen - By Pledge Class ---------------------
 
-// NOTE: This should be done in Member class once little is discovered, MOVE immediately
-function makeTrees() {
-  // reset trees
-  Tree.resetTreeList();
-  let mems = Member.getMemberList();
-  // make family tree, and everytime member is discovered, remove from members array passed in
-
-  // go thru each mem in array, array will be removing items during iteration
-  while (mems.length > 0) {
-    let start = mems[mems.length - 1];
-    console.log("Start: ", start)
-
-    // start at last member in member array, and then gen tree off of him, then move to next member
-
-    console.log("Tree Generation Start: ", start);
-    let new_tree = new Tree(start.id);
-    let youngest = start;
-
-    // remove first member from array
-    mems = mems.filter((x) => x.name != start.name);
-
-    // null protection
-    let next_mems;
-    if (start.littles == null) {
-      next_mems = [];
-    } else {
-      next_mems = start.littles;
-    }
-
-    // simply nav thru each member in tree
-    while (next_mems.length > 0) {
-      let temp_mems = [];
-      next_mems.forEach((mem) => {
-
-        // check for younger guy
-        if (mem.pledgeClassNum > youngest.pledgeClassNum) {
-          // if so, set as new youngest
-          youngest = mem;
-        }
-
-        // add littles to temp lil's if exist
-        if (mem.littles != null) {
-          temp_mems = temp_mems.concat(mem.littles);
-        }
-
-        // filter members out of mems array
-        mems = mems.filter((x) => x.name != mem.name);
-      });
-
-      // copy temp to main
-      next_mems = temp_mems;
-    }
-    new_tree.end = youngest.id;
-    Tree.addTree(new_tree);
-  }
-}
 
 // responsive layout
 window.addEventListener("resize", () => {
@@ -511,25 +455,10 @@ window.addEventListener("resize", () => {
   stage.add(layer);
 });
 
-// doesnt get used, could use ig?
-function tree_alloc(width, length, x, y) {
-  return {
-    x: x,
-    y: y,
-    width: width,
-    height: height,
-    fill: "red",
-    stroke: "black",
-    strokeWidth: 4,
-  };
-}
-
 function gen_pc() {
   layer.destroyChildren();
 
-  makeTrees(); // possibly move to Member class
   const family_trees = Tree.getTreeList();
-  console.log("Family Trees Generated from makeTrees", family_trees); // starts here too
 
   // make grid lines for each pledge class
 

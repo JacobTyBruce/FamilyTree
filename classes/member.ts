@@ -100,6 +100,7 @@ export default class Member {
                         // add this member to big's littles array
                         member.addLittle(this.#id);
                         // add to family tree -- set as end if pledge class is greater then end
+                        this.#familyTree = member.familyTree;
                         if (Member.getMemberByID(member.familyTree.end).pledgeClassNum < this.#pledgeClassNum) {
                             member.familyTree.end = this.id;
                         }
@@ -109,6 +110,8 @@ export default class Member {
                 });
                 if (this.#big == undefined) {
                     this.#big = big;
+                    // assig new family tree
+                    this.#familyTree = new Tree(this.#id);
                 }
             }
 
@@ -138,8 +141,6 @@ export default class Member {
             } else {
                 this.#bio = bio;
             }
-
-            this.#familyTree = null;
 
             // assign width
             this.#width = this.#calculateWidth();

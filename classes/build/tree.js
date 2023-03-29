@@ -3,27 +3,24 @@ const { v4: uuid } = require('uuid');
 export default class Tree {
     static #tree_list = [];
     #id;
-    #name;
     #root;
     #end;
-    constructor(root_id, name) {
+    constructor(root_id) {
         // assign id
         this.#id = 'T:' + uuid();
         // assign root
         this.#root = root_id;
-        // assign name if present
-        if (name) {
-            this.#name = name;
-        }
-        else {
-            this.#name = "Untitled Family Tree";
-        }
+        this.#end = root_id;
+        // add to tree list
+        Tree.#tree_list.push(this);
         // calculate width
         console.log("Constructor: Root Member", root_id);
         console.log("Constructor: Root Member Get", Member.getMemberByID(root_id));
     }
     static getTreeList() {
-        return Tree.#tree_list;
+        console.log("Tree List", Tree.#tree_list);
+        console.log(JSON.stringify(Tree.#tree_list));
+        return JSON.parse(JSON.stringify(Tree.#tree_list));
     }
     static resetTreeList() {
         Tree.#tree_list = [];
@@ -31,17 +28,8 @@ export default class Tree {
     static getTreeByID(id) {
         return Tree.#tree_list.find(tree => tree.id === id);
     }
-    static addTree(tree) {
-        Tree.#tree_list.push(tree);
-    }
-    static removeTree(id) {
-        Tree.#tree_list = Tree.#tree_list.filter(tree => tree.id !== id);
-    }
     get id() {
         return this.#id;
-    }
-    get name() {
-        return this.#name;
     }
     get root() {
         return this.#root;
@@ -52,13 +40,21 @@ export default class Tree {
     get width() {
         return Member.getMemberByID(this.#root).width;
     }
-    set name(name) {
-        this.#name = name;
-    }
     set root(root) {
         this.#root = root;
     }
     set end(end) {
         this.#end = end;
+    }
+    del() {
+        // delete object
+        Tree.#tree_list = Tree.#tree_list.filter(tree => tree.id !== this.#id);
+    }
+    toJSON() {
+        return {
+            id: this.#id,
+            root: this.#root,
+            end: this.#end
+        };
     }
 }

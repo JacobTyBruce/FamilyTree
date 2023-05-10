@@ -674,6 +674,7 @@ function drawGen(avail_space, generation, last_line) {
       layer.add(line);
     }
 
+    console.log("Adding " + generation[0].name + " to layer at " + person.x + ", " + person.y);
     layer.add(person);
     layer.add(name);
 
@@ -729,6 +730,7 @@ function drawGen(avail_space, generation, last_line) {
         fill: "green",
       });
 
+      console.log("Adding " + mem + " to layer at " + person.x + ", " + person.y);
       layer.add(person);
       layer.add(name);
 

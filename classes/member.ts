@@ -116,7 +116,6 @@ export default class Member {
             }
 
             // check for littles
-            console.log('TEST: ID TO ASSIGN TO LITTLES: ', this.#id);
             let temp_littles = [];
             Member.#member_list.forEach((member:Member) => {
                 if (member.big == this.#name) {
@@ -168,16 +167,10 @@ export default class Member {
         });  
     }
 
-    static getMemberByID(searchID: string): Member {
-        // log out both strings, for testing
-        console.log('----- getMemberByID -----')
-        console.log("Search: ", searchID);
-        
+    static getMemberByID(searchID: string): Member {        
         let found = null;
         Member.#member_list.forEach((mem: Member) => {
             if (mem.id.trim() == searchID.trim()) {
-                console.log("Found: ", mem.id);
-                console.log("-------------------------");
                 found = mem;
             };
         })
@@ -185,8 +178,6 @@ export default class Member {
         if (found != null) {
             return found;
         } else {
-            console.log("Not Found");
-            console.log("-------------------------")
             return null;
         }
     }

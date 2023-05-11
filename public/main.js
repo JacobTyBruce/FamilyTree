@@ -339,8 +339,6 @@ function add_member(existing_mem) {
     form.reset();
 
     // refresh tree view
-    console.log("Refreshing with this tree: ", Member.getMemberList());
-    console.log(c_mem)
     gen_tree();
     gen_pc();
   };
@@ -409,13 +407,12 @@ function gen_tree() {
   let tree_nodes = [];
   let i = 1;
   members.forEach((mem) => {
-    console.log(i,mem);
     i++;
     let node_obj = {};
 
     node_obj.id = mem.id;
 
-    if (mem.big != null && (mem.big.substring(0,2) == "M:")) {
+    if (mem.big != null && mem.big.substring(0, 2) == "M:") {
       node_obj.fid = Member.getMemberByID(mem.big).id;
     }
 
@@ -439,7 +436,6 @@ function gen_tree() {
 }
 
 // --------------- Second Gen - By Pledge Class ---------------------
-
 
 // responsive layout
 window.addEventListener("resize", () => {
@@ -465,6 +461,7 @@ function gen_pc() {
   console.log("Making Grid Lines");
 
   const members = Member.getMemberList();
+  console.log("All Members: ", members);
 
   let end = members[0].pledgeClassNum;
   for (let i = 1; i <= end; i++) {
@@ -488,7 +485,8 @@ function gen_pc() {
       pledge_class_name += " " + Member.alphabet[23];
     } else {
       pledge_class_name = Member.alphabet[Math.floor(i / 24) - 1];
-      pledge_class_name += " " + Member.alphabet[i - Math.floor(i / 24) * 24 - 1];
+      pledge_class_name +=
+        " " + Member.alphabet[i - Math.floor(i / 24) * 24 - 1];
     }
 
     let pc_name = new Konva.Text({
@@ -513,110 +511,90 @@ function gen_pc() {
   const start_space = 110;
 
   // array for next available space in row
-  let next_available_space = [];
-  next_available_space.fill(start_space, 0, members[0].pledgeClassNum - 1);
+  let next_available_space = Array(members[0].pledgeClassNum).fill(start_space);
 
   // defined boxes for each family tree
   family_trees.forEach((tree) => {
     console.log(tree);
 
     // get x value by looping over next_available_space to find most compatible space
-    // compatible space = the largest value in next_available_space that corresponds to pc numbers
-    let x = start_space;
+    // compatible space = first x value that can ecompass all levels of the tree, i.e. the largest value in the levels of the tree in next_available_space
 
-    for (let i = Member.getMemberByID(tree.root).pledgeClassNum; i < end + 1; i++) {
-      if (next_available_space[i - 1] > x) {
-        x = next_available_space[i - 1];
+    // get subarray from next_available_space that contains only the values for the family tree's pledge class numbers
+    // start at root and end at end
+    // get the largest value in the subarray
+    // set x to that value
+
+    console.log(next_available_space,Member.getMemberByID(tree.root).pledgeClassNum - 1,
+      Member.getMemberByID(tree.end).pledgeClassNum + 1 )
+    let family_tree_available_space = next_available_space.slice(
+      Member.getMemberByID(tree.root).pledgeClassNum - 1,
+      Member.getMemberByID(tree.end).pledgeClassNum
+    );
+    console.log("Concerned space:",family_tree_available_space, family_tree_available_space.length);
+
+    let start_x = family_tree_available_space[0];
+
+    // loop over family_tree_available_space and find the largest value
+    family_tree_available_space.forEach((val) => {
+      if (val > start_x) {
+        start_x = val;
       }
-    }
+    });
 
-    // update next_avaialbe_space array
-    // loops over next_available_space in regards to the pledsge class numbers and updates the next available space to the width of the tree added
-    for (let i = Member.getMemberByID(tree.root).pledgeClassNum; i < end + 1; i++) {
-      next_available_space[i - 1] = x + tree.width * pledge_class_node_w + 50;
-    }
+    // TESTING
+    // tree.width is undefined
+    // tree.getWidth() is not defined as a function
+    console.log(start_x, tree.getWidth(), pledge_class_node_w, start_x + (tree.getWidth() * pledge_class_node_w) + 50)
 
-    // w = 2| 51 | 2
-    // 51 so odd can be centered
 
-    console.log(
-      "Tree reserved space: x: " +
-        x +
-        "->" +
-        x +
-        tree.width * 55 +
+      // update next_avaialbe_space array
+      // loops over next_available_space in regards to the pledsge class numbers and updates the next available space to the width of the tree added
+      for (
+        let i = Member.getMemberByID(tree.root).pledgeClassNum;
+        i <= Member.getMemberByID(tree.end).pledgeClassNum;
+        i++
+      ) {
+        // ERROR HERE - TWO THINGS ARE HAPPENING - 1. The next avialble space is not being updated entirely, just the previous members layer, and its being set to NaN
+        next_available_space[i - 1] = start_x + (tree.getWidth() * pledge_class_node_w) + 50;
+      }
+
+      // w = 2| 51 | 2
+      // 51 so odd can be centered
+
+      console.log(
+        "Tree reserved space: x: " +
+        start_x +
+        " to " +
+        start_x + tree.getWidth() * 55 +
         " y: " +
         Member.getMemberByID(tree.root).pledgeClassNum * 25 +
-        "->" +
-        tree.end * 25
-    );
-
-    let res_bloc = {
-      x: x,
-      y: Member.getMemberByID(tree.root).pledgeClassNum * pledge_class_row_height,
-      width: tree.width * pledge_class_node_w,
-      height:
-        (tree.end + 1) * pledge_class_row_height -
-        Member.getMemberByID(tree.root).pledgeClassNum * pledge_class_row_height,
-      stroke: "#" + Math.floor(Math.random() * 16777215).toString(16),
-    };
-
-    let reserved_space = new Konva.Rect(res_bloc);
-
-    layer.add(reserved_space);
-
-    // add members to resrved place
-    // go to first member in tree and generate from there
-    drawGen(x, [Member.getMemberByID(tree.root)]);
-  });
-
-  // for testing purposes
-  // pledgeClasses are wrong here - ERROR
-  console.log("Family Trees: ", family_trees);
-  return family_trees;
-}
-
-// helper if pledge classes ever change or something wierd happens with them, used during initial testing
-function correctPC(set) {
-  if (set.pledgeClassNum || set.name) {
-    let pcl = set.pledgeClass.split(" ");
-    let correctPc =
-      (alphabet.indexOf(pcl[0].toLowerCase()) + 1) * 24 +
-      (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
-
-    if (set.pledgeClassNum != correctPc) {
-      console.log(
-        "Corrected " +
-          set.name +
-          "'s pledge class number from " +
-          set.pledgeClassNum +
-          " to " +
-          correctPc
+        " to " +
+        Member.getMemberByID(tree.end).pledgeClassNum * 25
       );
-      set.pledgeClassNum = correctPc;
-    }
-  } else {
-    for (let mem of set) {
-      let pcl = mem.pledgeClass.split(" ");
-      let correctPc =
-        (alphabet.indexOf(pcl[0].toLowerCase()) + 1) * 24 +
-        (alphabet.indexOf(pcl[1].toLowerCase()) + 1);
 
-      if (mem.pledgeClassNum != correctPc) {
-        console.log(
-          "Corrected " +
-            mem.name +
-            "'s pledge class number from " +
-            mem.pledgeClassNum +
-            " to " +
-            correctPc
-        );
-        mem.pledgeClassNum = correctPc;
-      } else {
-        //console.log(mem.name +"'s pledge class number was correct: " + mem.pledgeClass + ": " + mem.pledgeClassNum);
-      }
-    }
-  }
+      let res_bloc = {
+        x: start_x,
+        y:
+          Member.getMemberByID(tree.root).pledgeClassNum *
+          pledge_class_row_height,
+        width: tree.getWidth() * pledge_class_node_w,
+        height:
+          (Member.getMemberByID(tree.end).pledgeClassNum + 1) * pledge_class_row_height -
+          Member.getMemberByID(tree.root).pledgeClassNum *
+          pledge_class_row_height,
+        stroke: "#" + Math.floor(Math.random() * 16777215).toString(16),
+      };
+
+      let reserved_space = new Konva.Rect(res_bloc);
+
+      layer.add(reserved_space);
+
+      // add members to resrved place
+      // go to first member in tree and generate from there
+      console.log("Tree reserved block: ", res_bloc);
+      drawGen(start_x, [Member.getMemberByID(tree.root)]);
+  });
 }
 
 // PARAMS
@@ -635,6 +613,9 @@ function drawGen(avail_space, generation, last_line) {
   // if generation is larger than 1 person, go from first member to left and get the width property on member and use it to reserve portion of avail_space
   // then use the space used in avail_space as next avail_space and the littles as generation
   if (generation.length == 1) {
+
+    console.log("Drawing Generation: ", generation);
+
     let person = new Konva.Rect({
       x:
         avail_space +
@@ -656,7 +637,7 @@ function drawGen(avail_space, generation, last_line) {
       text: generation[0].name.split(" ")[0],
       fontSize: 12,
       fontFamily: "Calibri",
-      fill: "green",
+      fill: "white",
     });
 
     if (last_line != undefined) {
@@ -674,7 +655,14 @@ function drawGen(avail_space, generation, last_line) {
       layer.add(line);
     }
 
-    console.log("Adding " + generation[0].name + " to layer at " + person.x + ", " + person.y);
+    console.log(
+      "Adding " +
+      generation[0].name +
+      " to layer at " +
+      person.x +
+      ", " +
+      person.y
+    );
     layer.add(person);
     layer.add(name);
 
@@ -685,11 +673,11 @@ function drawGen(avail_space, generation, last_line) {
         points: [
           avail_space + (generation[0].width * pledge_class_node_w) / 2,
           generation[0].pledgeClassNum * pledge_class_row_height +
-            pledge_class_node_h,
+          pledge_class_node_h,
           avail_space + (generation[0].width * pledge_class_node_w) / 2,
           generation[0].pledgeClassNum * pledge_class_row_height +
-            pledge_class_node_h +
-            10,
+          pledge_class_node_h +
+          10,
         ],
         stroke: "black",
         strokeWidth: 1,
@@ -699,8 +687,8 @@ function drawGen(avail_space, generation, last_line) {
       drawGen(avail_space, generation[0].littles, [
         avail_space + (generation[0].width * pledge_class_node_w) / 2,
         generation[0].pledgeClassNum * pledge_class_row_height +
-          pledge_class_node_h +
-          10,
+        pledge_class_node_h +
+        10,
       ]);
     }
   } else {
@@ -730,7 +718,9 @@ function drawGen(avail_space, generation, last_line) {
         fill: "green",
       });
 
-      console.log("Adding " + mem + " to layer at " + person.x + ", " + person.y);
+      console.log(
+        "Adding " + mem + " to layer at " + person.x + ", " + person.y
+      );
       layer.add(person);
       layer.add(name);
 
@@ -771,20 +761,24 @@ function drawGen(avail_space, generation, last_line) {
             mem.pledgeClassNum * pledge_class_row_height + pledge_class_node_h,
             next_available_space + (mem.width * pledge_class_node_w) / 2,
             mem.pledgeClassNum * pledge_class_row_height +
-              pledge_class_node_h +
-              10,
+            pledge_class_node_h +
+            10,
           ],
           stroke: "black",
           strokeWidth: 1,
         });
         layer.add(line);
-        console.log("drawing littles...")
-        drawGen(next_available_space, mem.littles.map(little => little.id), [
-          next_available_space + (mem.width * pledge_class_node_w) / 2,
-          mem.pledgeClassNum * pledge_class_row_height +
+        console.log("drawing littles...");
+        drawGen(
+          next_available_space,
+          mem.littles.map((little) => little.id),
+          [
+            next_available_space + (mem.width * pledge_class_node_w) / 2,
+            mem.pledgeClassNum * pledge_class_row_height +
             pledge_class_node_h +
             10,
-        ]);
+          ]
+        );
       }
       // go to next generation using next available space and current mem.length and then this members littles
       next_available_space += mem.width * pledge_class_node_w;

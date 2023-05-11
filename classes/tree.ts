@@ -20,16 +20,9 @@ export default class Tree {
 
         // add to tree list
         Tree.#tree_list.push(this);
-
-        // calculate width
-        console.log("Constructor: Root Member", root_id)
-        console.log("Constructor: Root Member Get", Member.getMemberByID(root_id));
-
     }
 
     static getTreeList(): NonNullable<Tree[]> {
-        console.log("Tree List", Tree.#tree_list);
-        console.log(JSON.stringify(Tree.#tree_list));
         return JSON.parse(JSON.stringify(Tree.#tree_list))
     }
 
@@ -53,7 +46,7 @@ export default class Tree {
         return this.#end;
     }
 
-    get width(): NonNullable<number> {
+    getWidth(): NonNullable<number> {
         return Member.getMemberByID(this.#root).width;
     }
 

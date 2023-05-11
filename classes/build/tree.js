@@ -13,13 +13,8 @@ export default class Tree {
         this.#end = root_id;
         // add to tree list
         Tree.#tree_list.push(this);
-        // calculate width
-        console.log("Constructor: Root Member", root_id);
-        console.log("Constructor: Root Member Get", Member.getMemberByID(root_id));
     }
     static getTreeList() {
-        console.log("Tree List", Tree.#tree_list);
-        console.log(JSON.stringify(Tree.#tree_list));
         return JSON.parse(JSON.stringify(Tree.#tree_list));
     }
     static resetTreeList() {
@@ -37,7 +32,7 @@ export default class Tree {
     get end() {
         return this.#end;
     }
-    get width() {
+    getWidth() {
         return Member.getMemberByID(this.#root).width;
     }
     set root(root) {
